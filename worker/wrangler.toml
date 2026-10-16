@@ -12,3 +12,6 @@ database_id = "32dbd70c-b64a-4b36-9654-f07974786f95"
 # Optional environment variables
 [vars]
 CORS_ORIGIN = "*"
+ADMIN_EMAIL = "admin@citadel.com"
+ADMIN_PASSWORD = "admin"
+JWT_SECRET = "citadel_vault_secret_2026_edge_key"

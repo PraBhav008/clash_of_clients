@@ -18,9 +18,11 @@ import {
   X,
   Gem,
   Sparkles,
-  Trash2
+  Trash2,
+  LogOut
 } from 'lucide-react';
 import { useDashboard, ActiveView } from '../../context/DashboardContext';
+import { useAuth } from '../../context/AuthContext';
 import { sound } from '../../utils/audio';
 
 interface SidebarProps {
@@ -44,6 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileMenuOpen, onCloseMobil
     trashedClients,
     setIsTrashOpen
   } = useDashboard();
+  const { user, logout } = useAuth();
 
   const pendingTasksCount = tasks.filter(t => t.status !== 'Completed').length;
   const overdueInvoicesCount = invoices.filter(i => i.status === 'Overdue').length;
@@ -195,6 +198,34 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileMenuOpen, onCloseMobil
           </span>
         </button>
       )}
+
+      {/* Admin Profile & Logout */}
+      <div className="p-2.5 mx-2 mb-2 rounded-xl bg-[#111726] border border-[#1E293B] flex items-center justify-between">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#1E293B] to-[#0F172A] border border-[#C9A038]/40 flex items-center justify-center text-[#ECC968] font-black text-xs shrink-0">
+            {user?.email?.charAt(0).toUpperCase() || 'A'}
+          </div>
+          <div className="min-w-0">
+            <div className="text-[11px] font-bold text-slate-200 truncate leading-tight">
+              {user?.email || 'admin@citadel.com'}
+            </div>
+            <div className="text-[9px] text-[#ECC968] font-semibold uppercase tracking-wider">
+              {user?.role || 'Administrator'}
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={() => {
+            sound.playClick();
+            logout();
+          }}
+          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+          title="Sign Out of Citadel"
+          aria-label="Sign Out"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+        </button>
+      </div>
 
       {/* Footer System Status */}
       <div className="p-3 border-t border-[#1E2638] text-[11px] text-slate-500 flex items-center justify-between">

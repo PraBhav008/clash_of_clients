@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { DashboardProvider, useDashboard } from './context/DashboardContext';
+import { LoginView } from './components/auth/LoginView';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
 import { GlobalSearchModal } from './components/modals/GlobalSearchModal';
@@ -9,6 +11,7 @@ import { GemForgeModal } from './components/modals/GemForgeModal';
 import { TrashCanModal } from './components/modals/TrashCanModal';
 import { FloatingQuickActionButton } from './components/common/FloatingQuickActionButton';
 import { ToastContainer } from './components/common/ToastContainer';
+import { Shield } from 'lucide-react';
 
 // Views
 import { CommandCenterView } from './views/CommandCenterView';
@@ -102,11 +105,41 @@ const DashboardContent: React.FC = () => {
   );
 };
 
-export function App() {
+const AuthGate: React.FC = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen min-h-[100dvh] w-full bg-[#070A10] flex flex-col items-center justify-center gap-4 text-slate-100">
+        <div className="relative">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1C2538] to-[#0E1524] border-2 border-[#C9A038]/60 flex items-center justify-center text-[#ECC968] shadow-[0_0_25px_rgba(201,160,56,0.3)] animate-pulse">
+            <Shield className="w-8 h-8 fill-[#C9A038]/20 stroke-[1.8]" />
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-xs font-mono text-[#ECC968] tracking-wider uppercase">
+          <div className="w-2 h-2 rounded-full bg-[#ECC968] animate-ping" />
+          Verifying Citadel Session...
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginView />;
+  }
+
   return (
     <DashboardProvider>
       <DashboardContent />
     </DashboardProvider>
+  );
+};
+
+export function App() {
+  return (
+    <AuthProvider>
+      <AuthGate />
+    </AuthProvider>
   );
 }
 

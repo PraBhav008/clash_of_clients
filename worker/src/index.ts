@@ -9,42 +9,107 @@ export interface Env {
   DB: D1Database;
   DASHBOARD_API_KEY?: string;
   CORS_ORIGIN?: string;
+  ADMIN_EMAIL?: string;
+  ADMIN_PASSWORD?: string;
+  JWT_SECRET?: string;
 }
 
-function getCorsHeaders(env: Env): Record<string, string> {
-  return {
-    'Access-Control-Allow-Origin': env.CORS_ORIGIN || '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key',
-    'Access-Control-Max-Age': '86400',
-  };
+// SHA-256 password hash using standard WebCrypto
+async function hashPassword(password: string): Promise<string> {
+  const enc = new TextEncoder().encode('citadel_salt_2026_' + password);
+  const hashBuf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(hashBuf))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
-function jsonResponse(data: any, status = 200, env: Env): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      ...getCorsHeaders(env),
-    },
-  });
-}
+// Ensure auth table exists in D1 and seed default admin account
+async function ensureAuthTable(env: Env) {
+  try {
+    await env.DB.exec(`
+      CREATE TABLE IF NOT EXISTS citadel_auth (
+        id TEXT PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+    `);
 
-function errorResponse(message: string, status = 400, env: Env): Response {
-  return jsonResponse({ success: false, error: message }, status, env);
-}
-
-function isAuthorized(request: Request, env: Env): boolean {
-  // If DASHBOARD_API_KEY is not set in Worker secrets, permit access for seamless onboarding
-  if (!env.DASHBOARD_API_KEY || env.DASHBOARD_API_KEY.trim() === '') {
-    return true;
+    const existing = await env.DB.prepare('SELECT id FROM citadel_auth LIMIT 1;').first();
+    if (!existing) {
+      const defaultEmail = (env.ADMIN_EMAIL || 'admin@citadel.com').trim().toLowerCase();
+      const defaultPass = env.ADMIN_PASSWORD || 'admin';
+      const hashed = await hashPassword(defaultPass);
+      const now = new Date().toISOString();
+      await env.DB.prepare(
+        'INSERT OR REPLACE INTO citadel_auth (id, email, password_hash, role, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6);'
+      ).bind('primary_admin', defaultEmail, hashed, 'admin', now, now).run();
+    }
+  } catch (err) {
+    console.warn('[AUTH] Error ensuring auth table:', err);
   }
+}
 
+// Signed session bearer token
+async function generateAuthToken(email: string, role: string, env: Env): Promise<string> {
+  const secret = env.JWT_SECRET || 'citadel_vault_secret_2026_edge_key';
+  const payload = {
+    email,
+    role,
+    exp: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days session
+  };
+  const payloadStr = btoa(JSON.stringify(payload));
+  const enc = new TextEncoder().encode(payloadStr + secret);
+  const signBuf = await crypto.subtle.digest('SHA-256', enc);
+  const signHex = Array.from(new Uint8Array(signBuf))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .slice(0, 32)
+    .join('');
+  return `${payloadStr}.${signHex}`;
+}
+
+async function verifyAuthToken(token: string, env: Env): Promise<{ valid: boolean; email?: string; role?: string }> {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 2) return { valid: false };
+    const [payloadStr, signHex] = parts;
+    const secret = env.JWT_SECRET || 'citadel_vault_secret_2026_edge_key';
+    const enc = new TextEncoder().encode(payloadStr + secret);
+    const signBuf = await crypto.subtle.digest('SHA-256', enc);
+    const expectedSign = Array.from(new Uint8Array(signBuf))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .slice(0, 32)
+      .join('');
+    if (signHex !== expectedSign) return { valid: false };
+
+    const payload = JSON.parse(atob(payloadStr));
+    if (payload.exp && Date.now() > payload.exp) return { valid: false };
+    return { valid: true, email: payload.email, role: payload.role };
+  } catch {
+    return { valid: false };
+  }
+}
+
+async function isAuthorized(request: Request, env: Env): Promise<boolean> {
   const authHeader = request.headers.get('Authorization') || '';
   const bearerMatch = authHeader.match(/^Bearer\s+(.+)$/i);
   const token = bearerMatch ? bearerMatch[1].trim() : (request.headers.get('x-api-key') || '').trim();
 
-  return token === env.DASHBOARD_API_KEY.trim();
+  // If token matches worker secret DASHBOARD_API_KEY, authorize immediately
+  if (env.DASHBOARD_API_KEY && token === env.DASHBOARD_API_KEY.trim()) {
+    return true;
+  }
+
+  // Check if token is a valid signed session token
+  if (token) {
+    const verified = await verifyAuthToken(token, env);
+    if (verified.valid) return true;
+  }
+
+  // If DASHBOARD_API_KEY is not set and no token, fallback to authorized for local setup if configured
+  return false;
 }
 
 /**
@@ -52,6 +117,7 @@ function isAuthorized(request: Request, env: Env): boolean {
  */
 async function ensureTables(env: Env) {
   await env.DB.exec('CREATE TABLE IF NOT EXISTS citadel_sync (id TEXT PRIMARY KEY, updated_at TEXT NOT NULL, version TEXT NOT NULL, data TEXT NOT NULL);');
+  await ensureAuthTable(env);
 }
 
 export default {
@@ -73,7 +139,7 @@ export default {
       return jsonResponse({
         success: true,
         service: "Citadel Edge API",
-        version: "sync-fix-2026-10-14-v2",
+        version: "auth-sync-2026-v3",
         d1: "connected"
       }, 200, env);
     }
@@ -94,11 +160,150 @@ export default {
       }
     }
 
-    // Authenticate all remaining /api routes if DASHBOARD_API_KEY is configured
-    if (!isAuthorized(request, env)) {
+    // =========================================================================
+    // Authentication Endpoints
+    // =========================================================================
+
+    // POST /api/auth/login - Multi-device Admin Login
+    if (path === '/api/auth/login' && method === 'POST') {
+      try {
+        await ensureAuthTable(env);
+        const body = await request.json() as any;
+        const email = (body.email || '').trim().toLowerCase();
+        const password = (body.password || '').trim();
+
+        if (!email || !password) {
+          return errorResponse('Email and password are required', 400, env);
+        }
+
+        const hashed = await hashPassword(password);
+
+        // Query D1 database
+        let adminRecord = await env.DB.prepare(
+          'SELECT id, email, password_hash, role FROM citadel_auth WHERE lower(email) = ?1 LIMIT 1;'
+        ).bind(email).first<{ id: string; email: string; password_hash: string; role: string }>();
+
+        // Default credentials fallback
+        const defaultEmail = (env.ADMIN_EMAIL || 'admin@citadel.com').trim().toLowerCase();
+        const defaultPass = env.ADMIN_PASSWORD || 'admin';
+        const isDefaultMatch = email === defaultEmail && password === defaultPass;
+
+        if (!adminRecord && isDefaultMatch) {
+          const now = new Date().toISOString();
+          await env.DB.prepare(
+            'INSERT OR REPLACE INTO citadel_auth (id, email, password_hash, role, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6);'
+          ).bind('primary_admin', defaultEmail, hashed, 'admin', now, now).run();
+          adminRecord = { id: 'primary_admin', email: defaultEmail, password_hash: hashed, role: 'admin' };
+        }
+
+        if (!adminRecord || (adminRecord.password_hash !== hashed && !isDefaultMatch)) {
+          return jsonResponse({
+            success: false,
+            error: 'Invalid administrator email or password'
+          }, 401, env);
+        }
+
+        const token = await generateAuthToken(adminRecord.email, adminRecord.role, env);
+
+        return jsonResponse({
+          success: true,
+          message: 'Admin authentication successful',
+          token,
+          user: {
+            email: adminRecord.email,
+            role: adminRecord.role,
+            name: 'Citadel Architect'
+          }
+        }, 200, env);
+      } catch (err: any) {
+        console.error('[AUTH ERROR] Login failed:', err);
+        return errorResponse(`Login error: ${err.message}`, 500, env);
+      }
+    }
+
+    // POST /api/auth/verify (or GET) - Verify current session token
+    if (path === '/api/auth/verify' && (method === 'POST' || method === 'GET')) {
+      try {
+        const authHeader = request.headers.get('Authorization') || '';
+        const bearerMatch = authHeader.match(/^Bearer\s+(.+)$/i);
+        const token = bearerMatch ? bearerMatch[1].trim() : (request.headers.get('x-api-key') || '').trim();
+
+        if (!token) {
+          return jsonResponse({ success: false, authenticated: false }, 401, env);
+        }
+
+        const verified = await verifyAuthToken(token, env);
+        if (!verified.valid) {
+          return jsonResponse({ success: false, authenticated: false, error: 'Session expired' }, 401, env);
+        }
+
+        return jsonResponse({
+          success: true,
+          authenticated: true,
+          user: {
+            email: verified.email,
+            role: verified.role || 'admin',
+            name: 'Citadel Architect'
+          }
+        }, 200, env);
+      } catch (err: any) {
+        return errorResponse(`Verify error: ${err.message}`, 500, env);
+      }
+    }
+
+    // POST /api/auth/change-credentials - Update admin email & password across all devices
+    if (path === '/api/auth/change-credentials' && method === 'POST') {
+      try {
+        const authorized = await isAuthorized(request, env);
+        if (!authorized) {
+          return jsonResponse({ success: false, error: 'Unauthorized: Invalid token' }, 401, env);
+        }
+
+        const body = await request.json() as any;
+        const currentPassword = (body.currentPassword || '').trim();
+        const newEmail = (body.newEmail || '').trim().toLowerCase();
+        const newPassword = (body.newPassword || '').trim();
+
+        if (!currentPassword || !newEmail || !newPassword) {
+          return errorResponse('Current password, new email, and new password are required', 400, env);
+        }
+
+        const currentHash = await hashPassword(currentPassword);
+        const adminRecord = await env.DB.prepare(
+          'SELECT id, email, password_hash FROM citadel_auth WHERE password_hash = ?1 LIMIT 1;'
+        ).bind(currentHash).first<{ id: string; email: string; password_hash: string }>();
+
+        const defaultPass = env.ADMIN_PASSWORD || 'admin';
+        if (!adminRecord && currentPassword !== defaultPass) {
+          return errorResponse('Current password is incorrect', 400, env);
+        }
+
+        const newHashed = await hashPassword(newPassword);
+        const now = new Date().toISOString();
+
+        await env.DB.prepare(
+          'UPDATE citadel_auth SET email = ?1, password_hash = ?2, updated_at = ?3 WHERE id = ?4;'
+        ).bind(newEmail, newHashed, now, adminRecord?.id || 'primary_admin').run();
+
+        const newToken = await generateAuthToken(newEmail, 'admin', env);
+
+        return jsonResponse({
+          success: true,
+          message: 'Admin credentials updated successfully across all devices!',
+          token: newToken,
+          user: { email: newEmail, role: 'admin', name: 'Citadel Architect' }
+        }, 200, env);
+      } catch (err: any) {
+        return errorResponse(`Update credentials error: ${err.message}`, 500, env);
+      }
+    }
+
+    // Authenticate all remaining protected API routes
+    const authorized = await isAuthorized(request, env);
+    if (!authorized) {
       return jsonResponse({
         success: false,
-        error: 'Unauthorized: Invalid or missing DASHBOARD_API_KEY'
+        error: 'Unauthorized: Admin authentication token required'
       }, 401, env);
     }
 

@@ -17,9 +17,15 @@ import {
   Sparkles,
   Info,
   FileCode,
-  ShieldCheck
+  ShieldCheck,
+  Lock,
+  Key,
+  Mail,
+  LogOut,
+  UserCheck
 } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
+import { useAuth } from '../context/AuthContext';
 import { sound } from '../utils/audio';
 import { ReturnButton } from '../components/common/ReturnButton';
 import { testCloudflareConnection, getSavedCloudflareConfig, getWorkerBaseUrl } from '../utils/cloudflareD1';
@@ -46,6 +52,46 @@ export const SettingsView: React.FC = () => {
   const [showSetupGuide, setShowSetupGuide] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  // Admin Auth State
+  const { user, logout, updateCredentials } = useAuth();
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newEmail, setNewEmail] = useState(user?.email || 'admin@citadel.com');
+  const [newPassword, setNewPassword] = useState('');
+  const [credStatus, setCredStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [isUpdatingCreds, setIsUpdatingCreds] = useState(false);
+
+  const handleUpdateCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCredStatus(null);
+    if (!currentPassword.trim() || !newEmail.trim() || !newPassword.trim()) {
+      setCredStatus({ type: 'error', message: 'All credential fields are required.' });
+      sound.playClick();
+      return;
+    }
+
+    setIsUpdatingCreds(true);
+    sound.playClick();
+
+    const res = await updateCredentials(currentPassword.trim(), newEmail.trim(), newPassword.trim());
+    setIsUpdatingCreds(false);
+
+    if (res.success) {
+      sound.playUpgrade();
+      setCredStatus({
+        type: 'success',
+        message: 'Admin credentials updated successfully! Changes are active across all connected devices.'
+      });
+      setCurrentPassword('');
+      setNewPassword('');
+    } else {
+      sound.playClick();
+      setCredStatus({
+        type: 'error',
+        message: res.error || 'Failed to update credentials. Check your current password.'
+      });
+    }
+  };
 
   const handleResetData = () => {
     if (window.confirm('Clear all stored dashboard data and start fresh?')) {
@@ -119,6 +165,118 @@ export const SettingsView: React.FC = () => {
             Test Victory Fanfare 🎺
           </button>
         </div>
+      </div>
+
+      {/* Admin Authentication & Multi-Device Access */}
+      <div className="p-5 rounded-2xl bg-[#121826] border border-[#20293D] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-[#C9A038]/15 text-[#ECC968] border border-[#C9A038]/30">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-heading font-bold text-sm text-slate-100">
+                  Admin Access & Multi-Device Security
+                </h3>
+                <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-[#C9A038]/15 text-[#ECC968] border border-[#C9A038]/30">
+                  Active Session
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Logged in as <span className="text-slate-200 font-semibold">{user?.email || 'admin@citadel.com'}</span> · Credentials sync via Cloudflare D1
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              sound.playClick();
+              logout();
+            }}
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+
+        {/* Change Credentials Form */}
+        <form onSubmit={handleUpdateCredentials} className="p-4 rounded-xl bg-[#0B0F17] border border-[#1E2638] space-y-3.5">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-200 uppercase tracking-wider">
+            <Key className="w-3.5 h-3.5 text-[#ECC968]" />
+            <span>Update Admin Email & Password</span>
+          </div>
+
+          {credStatus && (
+            <div className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
+              credStatus.type === 'success'
+                ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
+                : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
+            }`}>
+              {credStatus.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              )}
+              <span>{credStatus.message}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                Current Password
+              </label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={e => setCurrentPassword(e.target.value)}
+                placeholder="Current password"
+                className="w-full px-3 py-2 bg-[#141B2D] border border-[#232F48] rounded-lg text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-[#C9A038]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                New Admin Email
+              </label>
+              <input
+                type="email"
+                value={newEmail}
+                onChange={e => setNewEmail(e.target.value)}
+                placeholder="admin@citadel.com"
+                className="w-full px-3 py-2 bg-[#141B2D] border border-[#232F48] rounded-lg text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-[#C9A038]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                New Password
+              </label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="New password"
+                className="w-full px-3 py-2 bg-[#141B2D] border border-[#232F48] rounded-lg text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-[#C9A038]"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-[11px] text-slate-400">
+              Updating here updates the D1 database edge immediately.
+            </span>
+            <button
+              type="submit"
+              disabled={isUpdatingCreds}
+              className="btn-gold px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+            >
+              {isUpdatingCreds ? 'Updating Edge...' : 'Save & Sync Credentials'}
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Cloudflare Worker & D1 Database Edge Sync */}

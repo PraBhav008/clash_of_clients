@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Client,
@@ -172,8 +172,8 @@ interface DashboardContextType {
   cloudflareConfig: CloudflareD1Config;
   updateCloudflareConfig: (cfg: Partial<CloudflareD1Config>) => void;
   isCloudflareSyncing: boolean;
-  syncToCloudflare: () => Promise<boolean>;
-  restoreFromCloudflare: () => Promise<boolean>;
+  syncToCloudflare: (silent?: boolean) => Promise<boolean>;
+  restoreFromCloudflare: (silent?: boolean) => Promise<boolean>;
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -345,6 +345,61 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     localStorage.setItem('coc_v2_stats', JSON.stringify(kingdomStats));
   }, [kingdomStats]);
+
+  // Multi-Device Auto-Sync: Load latest cloud data on mount if authenticated
+  const isInitialSyncDone = useRef(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('coc_auth_token');
+    if (token) {
+      restoreFromCloudflare(true).finally(() => {
+        isInitialSyncDone.current = true;
+      });
+    } else {
+      isInitialSyncDone.current = true;
+    }
+  }, []);
+
+  // Multi-Device Auto-Sync: Silently refresh when switching back to this tab/window
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const token = localStorage.getItem('coc_auth_token');
+        if (token && !isCloudflareSyncing) {
+          restoreFromCloudflare(true);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isCloudflareSyncing]);
+
+  // Multi-Device Auto-Sync: Debounced auto-save to Cloudflare D1 when data changes
+  useEffect(() => {
+    if (!isInitialSyncDone.current) return;
+    const token = localStorage.getItem('coc_auth_token');
+    if (!token) return;
+
+    const timer = setTimeout(() => {
+      syncToCloudflare(true);
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, [
+    clients,
+    trashedClients,
+    projects,
+    tasks,
+    invoices,
+    transactions,
+    documents,
+    hostingDomains,
+    communications,
+    leads,
+    kingdomStats,
+    gems,
+    unlockedPerks
+  ]);
 
   // Keyboard shortcut for search
   useEffect(() => {
@@ -738,7 +793,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   // Cloudflare D1 Database Synchronization Actions
-  const syncToCloudflare = async (): Promise<boolean> => {
+  const syncToCloudflare = async (silent = false): Promise<boolean> => {
     setIsCloudflareSyncing(true);
     try {
       const payload: CloudflareSyncPayload = {
@@ -767,35 +822,41 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           saveCloudflareConfig(next);
           return next;
         });
-        sound.playUpgrade();
-        addToast({
-          title: 'Cloudflare D1 Synced!',
-          description: res.message,
-          type: 'gold'
-        });
+        if (!silent) {
+          sound.playUpgrade();
+          addToast({
+            title: 'Cloudflare D1 Synced!',
+            description: res.message,
+            type: 'gold'
+          });
+        }
         return true;
       } else {
-        sound.playClick();
-        addToast({
-          title: 'Cloudflare Sync Failed',
-          description: res.message,
-          type: 'danger'
-        });
+        if (!silent) {
+          sound.playClick();
+          addToast({
+            title: 'Cloudflare Sync Failed',
+            description: res.message,
+            type: 'danger'
+          });
+        }
         return false;
       }
     } catch (err: any) {
-      addToast({
-        title: 'Cloudflare Sync Error',
-        description: err.message || 'Unexpected network error',
-        type: 'danger'
-      });
+      if (!silent) {
+        addToast({
+          title: 'Cloudflare Sync Error',
+          description: err.message || 'Unexpected network error',
+          type: 'danger'
+        });
+      }
       return false;
     } finally {
       setIsCloudflareSyncing(false);
     }
   };
 
-  const restoreFromCloudflare = async (): Promise<boolean> => {
+  const restoreFromCloudflare = async (silent = false): Promise<boolean> => {
     setIsCloudflareSyncing(true);
     try {
       const activeConfig = getSavedCloudflareConfig();
@@ -816,28 +877,34 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (typeof p.gems === 'number') setGems(p.gems);
         if (Array.isArray(p.unlockedPerkIds)) setUnlockedPerks(p.unlockedPerkIds as any);
 
-        triggerConfetti();
-        sound.playUpgrade();
-        addToast({
-          title: 'Restored from Cloudflare D1',
-          description: `Successfully restored database snapshot with ${p.clients?.length || 0} clients & ${p.trashedClients?.length || 0} trashed clients!`,
-          type: 'gold'
-        });
+        if (!silent) {
+          triggerConfetti();
+          sound.playUpgrade();
+          addToast({
+            title: 'Restored from Cloudflare D1',
+            description: `Successfully restored database snapshot with ${p.clients?.length || 0} clients & ${p.trashedClients?.length || 0} trashed clients!`,
+            type: 'gold'
+          });
+        }
         return true;
       } else {
-        addToast({
-          title: 'Restore Failed',
-          description: res.message,
-          type: 'danger'
-        });
+        if (!silent) {
+          addToast({
+            title: 'Restore Failed',
+            description: res.message,
+            type: 'danger'
+          });
+        }
         return false;
       }
     } catch (err: any) {
-      addToast({
-        title: 'Cloudflare Restore Error',
-        description: err.message || 'Failed to download snapshot',
-        type: 'danger'
-      });
+      if (!silent) {
+        addToast({
+          title: 'Cloudflare Restore Error',
+          description: err.message || 'Failed to download snapshot',
+          type: 'danger'
+        });
+      }
       return false;
     } finally {
       setIsCloudflareSyncing(false);

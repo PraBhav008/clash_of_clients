@@ -26,8 +26,18 @@ function getRequestHeaders(): Record<string, string> {
     'Content-Type': 'application/json',
   };
 
+  // Attach session auth token if logged in
+  try {
+    const token = localStorage.getItem('coc_auth_token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token.trim()}`;
+    }
+  } catch {
+    // ignore
+  }
+
   const key = WORKER_CONFIG.DASHBOARD_API_KEY?.trim();
-  if (key) {
+  if (key && !headers['Authorization']) {
     headers['Authorization'] = `Bearer ${key}`;
     headers['x-api-key'] = key;
   }
@@ -205,6 +215,123 @@ export async function pullSnapshotFromCloudflare(
     return {
       success: false,
       message: `Restore Error: ${err.message || 'Could not reach Cloudflare Worker'}`
+    };
+  }
+}
+
+/**
+ * Authenticate Administrator credentials against Cloudflare Worker D1 Edge
+ */
+export async function apiLogin(
+  email: string,
+  password: string
+): Promise<{ success: boolean; token?: string; user?: { email: string; role: string; name: string }; error?: string }> {
+  try {
+    const baseUrl = getWorkerBaseUrl();
+    const endpoint = `${baseUrl}/api/auth/login`;
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      return {
+        success: false,
+        error: data.error || data.message || `Login failed (${res.status})`,
+      };
+    }
+
+    return {
+      success: true,
+      token: data.token,
+      user: data.user,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || 'Network error reaching Cloudflare authentication edge.',
+    };
+  }
+}
+
+/**
+ * Verify saved session token
+ */
+export async function apiVerifySession(
+  token: string
+): Promise<{ success: boolean; user?: { email: string; role: string; name: string }; error?: string }> {
+  try {
+    const baseUrl = getWorkerBaseUrl();
+    const endpoint = `${baseUrl}/api/auth/verify`;
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      return {
+        success: false,
+        error: data.error || 'Session expired',
+      };
+    }
+
+    return {
+      success: true,
+      user: data.user,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || 'Network error validating session',
+    };
+  }
+}
+
+/**
+ * Change administrator email and password across all devices
+ */
+export async function apiChangeCredentials(
+  currentPassword: string,
+  newEmail: string,
+  newPassword: string
+): Promise<{ success: boolean; token?: string; user?: any; error?: string }> {
+  try {
+    const baseUrl = getWorkerBaseUrl();
+    const endpoint = `${baseUrl}/api/auth/change-credentials`;
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: getRequestHeaders(),
+      body: JSON.stringify({ currentPassword, newEmail, newPassword }),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      return {
+        success: false,
+        error: data.error || data.message || 'Failed to update credentials',
+      };
+    }
+
+    return {
+      success: true,
+      token: data.token,
+      user: data.user,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || 'Network error updating credentials',
     };
   }
 }

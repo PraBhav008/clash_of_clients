@@ -14,6 +14,29 @@ export interface Env {
   JWT_SECRET?: string;
 }
 
+function getCorsHeaders(env: Env): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': env.CORS_ORIGIN || '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+function jsonResponse(data: any, status = 200, env: Env): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      ...getCorsHeaders(env),
+    },
+  });
+}
+
+function errorResponse(message: string, status = 400, env: Env): Response {
+  return jsonResponse({ success: false, error: message }, status, env);
+}
+
 // SHA-256 password hash using standard WebCrypto
 async function hashPassword(password: string): Promise<string> {
   const enc = new TextEncoder().encode('citadel_salt_2026_' + password);

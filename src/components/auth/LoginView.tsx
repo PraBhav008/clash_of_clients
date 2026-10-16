@@ -94,7 +94,7 @@ export const LoginView: React.FC = () => {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="raisstudio100k@gmail.com"
+                placeholder="Email"
                 required
                 autoComplete="email"
                 className="w-full pl-10 pr-4 py-2.5 bg-[#141B2D] border border-[#263554] focus:border-[#C9A038] focus:ring-1 focus:ring-[#C9A038] rounded-xl text-sm text-slate-100 placeholder-slate-500 transition-colors outline-none"
@@ -117,7 +117,7 @@ export const LoginView: React.FC = () => {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Password"
                 required
                 autoComplete="current-password"
                 className="w-full pl-10 pr-11 py-2.5 bg-[#141B2D] border border-[#263554] focus:border-[#C9A038] focus:ring-1 focus:ring-[#C9A038] rounded-xl text-sm text-slate-100 placeholder-slate-500 transition-colors outline-none font-mono"

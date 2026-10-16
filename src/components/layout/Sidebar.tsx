@@ -207,7 +207,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileMenuOpen, onCloseMobil
           </div>
           <div className="min-w-0">
             <div className="text-[11px] font-bold text-slate-200 truncate leading-tight">
-              {user?.email || 'admin@citadel.com'}
+              {user?.email || 'raisstudio100k@gmail.com'}
             </div>
             <div className="text-[9px] text-[#ECC968] font-semibold uppercase tracking-wider">
               {user?.role || 'Administrator'}

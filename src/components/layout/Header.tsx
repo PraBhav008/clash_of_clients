@@ -410,7 +410,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, isMobileMenu
               logout();
             }}
             className="h-8 sm:h-9 px-2 sm:px-2.5 rounded-lg sm:rounded-xl bg-[#141B2D] border border-[#232F48] hover:border-rose-500/50 hover:bg-rose-500/10 text-slate-300 hover:text-rose-200 flex items-center gap-1.5 transition-all shrink-0 text-xs font-semibold group cursor-pointer"
-            title={`Logged in as ${user?.email || 'admin@citadel.com'} • Click to Sign Out`}
+            title={`Logged in as ${user?.email || 'raisstudio100k@gmail.com'} • Click to Sign Out`}
             aria-label="Sign Out"
           >
             <div className="w-5 h-5 rounded bg-[#C9A038]/20 border border-[#C9A038]/50 text-[#ECC968] flex items-center justify-center text-[10px] font-black group-hover:border-rose-400 group-hover:text-rose-300">

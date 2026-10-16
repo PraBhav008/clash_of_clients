@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Lock, Mail, Eye, EyeOff, Sparkles, ArrowRight, Server, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Shield, Lock, Mail, Eye, EyeOff, ArrowRight, Server, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { sound } from '../../utils/audio';
 
@@ -36,14 +36,6 @@ export const LoginView: React.FC = () => {
     }
   };
 
-  const handleFillDemo = () => {
-    setEmail('admin@citadel.com');
-    setPassword('admin');
-    setLocalError(null);
-    clearAuthError();
-    sound.playClick();
-  };
-
   const displayError = localError || authError;
 
   return (
@@ -64,9 +56,6 @@ export const LoginView: React.FC = () => {
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1C2538] to-[#0E1524] border-2 border-[#C9A038]/60 flex items-center justify-center text-[#ECC968] shadow-[0_0_25px_rgba(201,160,56,0.25)] group-hover:border-[#ECC968] transition-all">
               <Shield className="w-8 h-8 fill-[#C9A038]/20 stroke-[1.8]" />
             </div>
-            <div className="absolute -bottom-1 -right-1 bg-[#101726] border border-[#C9A038]/60 rounded-full p-1 text-[#ECC968]">
-              <Sparkles className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '6s' }} />
-            </div>
           </div>
 
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#182136] border border-[#263554] text-[11px] font-bold text-[#ECC968] mb-2 tracking-wide uppercase">
@@ -78,7 +67,7 @@ export const LoginView: React.FC = () => {
             ADMIN PORTAL
           </h1>
           <p className="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed">
-            Enter your credentials to synchronize and manage Citadel operations across all devices.
+            Enter your administrator credentials to access your command center and client data.
           </p>
         </div>
 
@@ -105,7 +94,7 @@ export const LoginView: React.FC = () => {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="admin@citadel.com"
+                placeholder="raisstudio100k@gmail.com"
                 required
                 autoComplete="email"
                 className="w-full pl-10 pr-4 py-2.5 bg-[#141B2D] border border-[#263554] focus:border-[#C9A038] focus:ring-1 focus:ring-[#C9A038] rounded-xl text-sm text-slate-100 placeholder-slate-500 transition-colors outline-none"
@@ -136,7 +125,7 @@ export const LoginView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword(p => !p)}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 transition-colors"
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -153,7 +142,7 @@ export const LoginView: React.FC = () => {
                 onChange={e => setRememberMe(e.target.checked)}
                 className="w-4 h-4 rounded bg-[#141B2D] border-[#263554] text-[#C9A038] focus:ring-[#C9A038] focus:ring-offset-0 cursor-pointer"
               />
-              <span>Remember on this device</span>
+              <span>Remember this device</span>
             </label>
             <span className="text-[10px] text-slate-500 flex items-center gap-1">
               <Server className="w-3 h-3 text-emerald-400" />
@@ -174,35 +163,17 @@ export const LoginView: React.FC = () => {
               </div>
             ) : (
               <>
-                <span>Access Dashboard</span>
+                <span>Sign In</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </>
             )}
           </button>
         </form>
 
-        {/* Demo Credentials Quick-Fill Helper */}
-        <div className="mt-6 pt-5 border-t border-[#1C253B]">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
-              Default Admin Account
-            </span>
-            <button
-              type="button"
-              onClick={handleFillDemo}
-              className="text-[10px] text-[#ECC968] hover:underline font-bold flex items-center gap-1 cursor-pointer"
-            >
-              <Sparkles className="w-3 h-3 text-[#ECC968]" />
-              Auto-fill Credentials
-            </button>
-          </div>
-          <div className="p-2.5 rounded-xl bg-[#121828] border border-[#1E2B44] text-[11px] font-mono text-slate-300 flex items-center justify-between">
-            <span className="text-slate-400">Email: <span className="text-[#ECC968] font-semibold">admin@citadel.com</span></span>
-            <span className="text-slate-400">Pass: <span className="text-slate-200 font-semibold">admin</span></span>
-          </div>
-          <p className="text-[10px] text-slate-500 text-center mt-2">
-            You can change your admin email and password anytime in Settings.
-          </p>
+        {/* Security Footer Notice */}
+        <div className="mt-6 pt-4 border-t border-[#1C253B] flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
+          <Lock className="w-3.5 h-3.5 text-[#ECC968]" />
+          <span>Encrypted Edge Session · Cloudflare D1 Protected</span>
         </div>
       </div>
     </div>

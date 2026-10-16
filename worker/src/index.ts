@@ -37,16 +37,15 @@ async function ensureAuthTable(env: Env) {
       );
     `);
 
-    const existing = await env.DB.prepare('SELECT id FROM citadel_auth LIMIT 1;').first();
-    if (!existing) {
-      const defaultEmail = (env.ADMIN_EMAIL || 'admin@citadel.com').trim().toLowerCase();
-      const defaultPass = env.ADMIN_PASSWORD || 'admin';
-      const hashed = await hashPassword(defaultPass);
-      const now = new Date().toISOString();
-      await env.DB.prepare(
-        'INSERT OR REPLACE INTO citadel_auth (id, email, password_hash, role, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6);'
-      ).bind('primary_admin', defaultEmail, hashed, 'admin', now, now).run();
-    }
+    const defaultEmail = (env.ADMIN_EMAIL || 'raisstudio100k@gmail.com').trim().toLowerCase();
+    const defaultPass = env.ADMIN_PASSWORD || 'close10clients';
+    const hashed = await hashPassword(defaultPass);
+    const now = new Date().toISOString();
+
+    // Push & sync target admin credentials directly into Cloudflare D1 database
+    await env.DB.prepare(
+      'INSERT INTO citadel_auth (id, email, password_hash, role, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6) ON CONFLICT(id) DO UPDATE SET email = excluded.email, password_hash = excluded.password_hash, updated_at = excluded.updated_at;'
+    ).bind('primary_admin', defaultEmail, hashed, 'admin', now, now).run();
   } catch (err) {
     console.warn('[AUTH] Error ensuring auth table:', err);
   }
@@ -184,8 +183,8 @@ export default {
         ).bind(email).first<{ id: string; email: string; password_hash: string; role: string }>();
 
         // Default credentials fallback
-        const defaultEmail = (env.ADMIN_EMAIL || 'admin@citadel.com').trim().toLowerCase();
-        const defaultPass = env.ADMIN_PASSWORD || 'admin';
+        const defaultEmail = (env.ADMIN_EMAIL || 'raisstudio100k@gmail.com').trim().toLowerCase();
+        const defaultPass = env.ADMIN_PASSWORD || 'close10clients';
         const isDefaultMatch = email === defaultEmail && password === defaultPass;
 
         if (!adminRecord && isDefaultMatch) {
@@ -273,7 +272,7 @@ export default {
           'SELECT id, email, password_hash FROM citadel_auth WHERE password_hash = ?1 LIMIT 1;'
         ).bind(currentHash).first<{ id: string; email: string; password_hash: string }>();
 
-        const defaultPass = env.ADMIN_PASSWORD || 'admin';
+        const defaultPass = env.ADMIN_PASSWORD || 'close10clients';
         if (!adminRecord && currentPassword !== defaultPass) {
           return errorResponse('Current password is incorrect', 400, env);
         }

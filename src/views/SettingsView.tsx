@@ -56,7 +56,7 @@ export const SettingsView: React.FC = () => {
   // Admin Auth State
   const { user, logout, updateCredentials } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
-  const [newEmail, setNewEmail] = useState(user?.email || 'admin@citadel.com');
+  const [newEmail, setNewEmail] = useState(user?.email || 'raisstudio100k@gmail.com');
   const [newPassword, setNewPassword] = useState('');
   const [credStatus, setCredStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isUpdatingCreds, setIsUpdatingCreds] = useState(false);
@@ -184,7 +184,7 @@ export const SettingsView: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Logged in as <span className="text-slate-200 font-semibold">{user?.email || 'admin@citadel.com'}</span> · Credentials sync via Cloudflare D1
+                Logged in as <span className="text-slate-200 font-semibold">{user?.email || 'raisstudio100k@gmail.com'}</span> · Credentials sync via Cloudflare D1
               </p>
             </div>
           </div>
@@ -245,7 +245,7 @@ export const SettingsView: React.FC = () => {
                 type="email"
                 value={newEmail}
                 onChange={e => setNewEmail(e.target.value)}
-                placeholder="admin@citadel.com"
+                placeholder="raisstudio100k@gmail.com"
                 className="w-full px-3 py-2 bg-[#141B2D] border border-[#232F48] rounded-lg text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-[#C9A038]"
               />
             </div>

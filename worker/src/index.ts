@@ -49,7 +49,7 @@ async function hashPassword(password: string): Promise<string> {
 // Ensure auth table exists in D1 and seed default admin account
 async function ensureAuthTable(env: Env) {
   try {
-    await env.DB.exec(`
+    await env.DB.prepare(`
       CREATE TABLE IF NOT EXISTS citadel_auth (
         id TEXT PRIMARY KEY,
         email TEXT UNIQUE NOT NULL,
@@ -58,7 +58,7 @@ async function ensureAuthTable(env: Env) {
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
-    `);
+    `).run();
 
     const defaultEmail = (env.ADMIN_EMAIL || 'raisstudio100k@gmail.com').trim().toLowerCase();
     const defaultPass = env.ADMIN_PASSWORD || 'close10clients';
@@ -70,7 +70,7 @@ async function ensureAuthTable(env: Env) {
       'INSERT INTO citadel_auth (id, email, password_hash, role, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6) ON CONFLICT(id) DO UPDATE SET email = excluded.email, password_hash = excluded.password_hash, updated_at = excluded.updated_at;'
     ).bind('primary_admin', defaultEmail, hashed, 'admin', now, now).run();
   } catch (err) {
-    console.warn('[AUTH] Error ensuring auth table:', err);
+    console.error('[AUTH] Error ensuring auth table:', err);
   }
 }
 
@@ -138,7 +138,7 @@ async function isAuthorized(request: Request, env: Env): Promise<boolean> {
  * Ensure the snapshot storage table exists in existing D1 database without modifying any other tables
  */
 async function ensureTables(env: Env) {
-  await env.DB.exec('CREATE TABLE IF NOT EXISTS citadel_sync (id TEXT PRIMARY KEY, updated_at TEXT NOT NULL, version TEXT NOT NULL, data TEXT NOT NULL);');
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS citadel_sync (id TEXT PRIMARY KEY, updated_at TEXT NOT NULL, version TEXT NOT NULL, data TEXT NOT NULL);').run();
   await ensureAuthTable(env);
 }
 

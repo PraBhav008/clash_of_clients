@@ -12,6 +12,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useDashboard } from '../../context/DashboardContext';
+import { ClientAvatar } from '../common/ClientAvatar';
 
 export const GlobalSearchModal: React.FC = () => {
   const {
@@ -164,7 +165,7 @@ export const GlobalSearchModal: React.FC = () => {
                           className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-800/60 cursor-pointer border border-transparent hover:border-[#232D42] transition-all group"
                         >
                           <div className="flex items-center gap-3">
-                            <img src={c.avatar} alt={c.name} className="w-8 h-8 rounded-lg object-cover" />
+                            <ClientAvatar src={c.avatar} name={c.name} company={c.company} className="w-8 h-8 rounded-lg" />
                             <div>
                               <div className="text-xs font-bold text-slate-200 group-hover:text-amber-300">
                                 {c.company}

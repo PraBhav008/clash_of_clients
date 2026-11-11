@@ -27,12 +27,15 @@ import {
   ShieldCheck,
   TrendingUp,
   Send,
-  Trash2
+  Trash2,
+  Pencil
 } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { sound } from '../utils/audio';
 import { ReturnButton } from '../components/common/ReturnButton';
+import { ClientAvatar } from '../components/common/ClientAvatar';
 import { DeleteClientConfirmModal } from '../components/modals/DeleteClientConfirmModal';
+import { EditClientModal } from '../components/modals/EditClientModal';
 
 export const ClientHQView: React.FC = () => {
   const {
@@ -62,22 +65,29 @@ export const ClientHQView: React.FC = () => {
   } = useDashboard();
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const isRadarUnlocked = isPerkUnlocked('client_health_radar');
   const isSpeedDialUnlocked = isPerkUnlocked('whatsapp_speed_dial');
 
   const client = clients.find(c => c.id === selectedClientId) || clients[0];
-  const project = projects.find(p => p.clientId === client?.id) || projects[0];
+  const project =
+    projects.find(p => p.id === client?.currentProjectId && p.clientId === client?.id) ||
+    projects.find(p => p.clientId === client?.id);
 
   const clientTasks = tasks.filter(t => t.clientId === client?.id);
   const clientInvoices = invoices.filter(i => i.clientId === client?.id);
   const clientTransactions = transactions.filter(t => t.clientId === client?.id);
   const clientDocs = documents.filter(d => d.clientId === client?.id);
-  const clientHosting = hostingDomains.find(h => h.clientId === client?.id) || hostingDomains[0];
+  const clientHosting = hostingDomains.find(h => h.clientId === client?.id);
   const clientComms = communications.filter(c => c.clientId === client?.id);
 
   const [activeTab, setActiveTab] = useState<'all' | 'phases' | 'treasury' | 'tasks' | 'invoices' | 'hosting' | 'comms' | 'docs'>('all');
-  const [internalNotes, setInternalNotes] = useState(client?.notes || '');
+  const [notesDraft, setNotesDraft] = useState<{ clientId: string; synced: string; value: string } | null>(null);
+  const internalNotes =
+    notesDraft && client && notesDraft.clientId === client.id && notesDraft.synced === (client.notes || '')
+      ? notesDraft.value
+      : (client?.notes || '');
 
   const handleDeployRetainer = () => {
     if (!client) return;
@@ -229,7 +239,10 @@ export const ClientHQView: React.FC = () => {
   }
 
   const handleNotesBlur = () => {
-    updateClient(client.id, { notes: internalNotes });
+    if (notesDraft && notesDraft.clientId === client.id) {
+      updateClient(client.id, { notes: internalNotes });
+      setNotesDraft(null);
+    }
   };
 
   const paidPercentage = Math.min(100, Math.round((client.amountPaid / client.projectValue) * 100));
@@ -280,6 +293,18 @@ export const ClientHQView: React.FC = () => {
           <button
             onClick={() => {
               sound.playClick();
+              setIsEditModalOpen(true);
+            }}
+            className="btn-edit-glow px-2.5 sm:px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5"
+            title="Edit all details of this client"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            <span>Edit Client</span>
+          </button>
+
+          <button
+            onClick={() => {
+              sound.playClick();
               setIsDeleteModalOpen(true);
             }}
             className="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 bg-[#251218] hover:bg-[#341620] text-[#EF4444] border border-[#EF4444]/30 hover:border-[#EF4444]/60 transition-all font-semibold"
@@ -296,10 +321,11 @@ export const ClientHQView: React.FC = () => {
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 min-w-0 w-full lg:w-auto">
-            <img
+            <ClientAvatar
               src={client.avatar}
-              alt={client.name}
-              className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover border border-[#232D42] shrink-0"
+              name={client.name}
+              company={client.company}
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl"
             />
 
             <div className="min-w-0">
@@ -316,22 +342,26 @@ export const ClientHQView: React.FC = () => {
               </div>
 
               <p className="text-xs text-slate-400 mt-1">
-                Contact: <strong className="text-slate-200">{client.name}</strong> · Joined {client.joinedDate}
+                Contact: <strong className="text-slate-200">{client.name || 'Not set'}</strong> · Joined {client.joinedDate}
               </p>
 
               <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 mt-2">
-                <a href={`mailto:${client.email}`} className="flex items-center gap-1.5 hover:text-slate-200">
-                  <Mail className="w-3.5 h-3.5 text-slate-500" />
-                  <span>{client.email}</span>
-                </a>
-                <a href={`tel:${client.phone}`} className="flex items-center gap-1.5 hover:text-slate-200">
-                  <Phone className="w-3.5 h-3.5 text-slate-500" />
-                  <span>{client.phone}</span>
-                </a>
+                {client.email && (
+                  <a href={`mailto:${client.email}`} className="flex items-center gap-1.5 hover:text-slate-200">
+                    <Mail className="w-3.5 h-3.5 text-slate-500" />
+                    <span>{client.email}</span>
+                  </a>
+                )}
+                {client.phone && (
+                  <a href={`tel:${client.phone}`} className="flex items-center gap-1.5 hover:text-slate-200">
+                    <Phone className="w-3.5 h-3.5 text-slate-500" />
+                    <span>{client.phone}</span>
+                  </a>
+                )}
                 {client.website && (
                   <a href={client.website} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-slate-200">
                     <Globe className="w-3.5 h-3.5 text-slate-500" />
-                    <span>{client.website.replace('https://', '')}</span>
+                    <span>{client.website.replace(/^https?:\/\//, '')}</span>
                   </a>
                 )}
               </div>
@@ -380,7 +410,7 @@ export const ClientHQView: React.FC = () => {
 
             <div className="flex justify-between items-center text-[10px] text-slate-400 mt-2">
               <span>Payment Reliability: <strong className="text-slate-200">High</strong></span>
-              <span>Revisions: <strong className="text-slate-200">{project?.revisionsCount || 0}/3</strong></span>
+              <span>Revisions: <strong className="text-slate-200">{project?.revisionsCount || 0}/{project?.maxRevisions ?? 3}</strong></span>
             </div>
           </div>
 
@@ -835,7 +865,7 @@ export const ClientHQView: React.FC = () => {
         <textarea
           rows={3}
           value={internalNotes}
-          onChange={e => setInternalNotes(e.target.value)}
+          onChange={e => setNotesDraft({ clientId: client.id, synced: client.notes || '', value: e.target.value })}
           onBlur={handleNotesBlur}
           placeholder="Client preferences, payment behavior, technical requirements..."
           className="w-full p-3 rounded-xl bg-[#0A0D14] border border-[#232D42] text-xs text-slate-200 outline-none focus:border-[#C9A038]"
@@ -852,6 +882,13 @@ export const ClientHQView: React.FC = () => {
           deleteClient(client.id);
           setIsDeleteModalOpen(false);
         }}
+      />
+
+      {/* Full Edit Client Modal */}
+      <EditClientModal
+        isOpen={isEditModalOpen}
+        client={client}
+        onClose={() => setIsEditModalOpen(false)}
       />
 
     </div>

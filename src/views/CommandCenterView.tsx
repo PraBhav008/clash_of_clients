@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { sound } from '../utils/audio';
+import { ClientAvatar } from '../components/common/ClientAvatar';
 
 export const CommandCenterView: React.FC = () => {
   const {
@@ -360,7 +361,7 @@ export const CommandCenterView: React.FC = () => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <img src={c.avatar} alt={c.name} className="w-8 h-8 rounded-lg object-cover" />
+                        <ClientAvatar src={c.avatar} name={c.name} company={c.company} className="w-8 h-8 rounded-lg" />
                         <div>
                           <div className="text-xs font-bold text-slate-200 group-hover:text-[#ECC968]">
                             {c.company}

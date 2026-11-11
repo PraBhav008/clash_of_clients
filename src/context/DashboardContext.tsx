@@ -64,6 +64,17 @@ export interface ToastMessage {
   type: 'gold' | 'elixir' | 'success' | 'info' | 'danger';
 }
 
+export interface ClientEditBundle {
+  client: Client;
+  projects: Project[];
+  hostingDomains: HostingDomain[];
+  tasks: Task[];
+  invoices: Invoice[];
+  transactions: PaymentTransaction[];
+  documents: DocumentItem[];
+  communications: Communication[];
+}
+
 interface DashboardContextType {
   activeView: ActiveView;
   setActiveView: (view: ActiveView) => void;
@@ -92,6 +103,7 @@ interface DashboardContextType {
   // CRUD & Operations
   addClient: (client: Omit<Client, 'id' | 'joinedDate'>) => Client;
   updateClient: (id: string, updates: Partial<Client>) => void;
+  saveClientBundle: (bundle: ClientEditBundle) => void;
   deleteClient: (id: string) => void;
 
   addProject: (project: {
@@ -560,6 +572,126 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const updateClient = (id: string, updates: Partial<Client>) => {
     setClients(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
     sound.playClick();
+  };
+
+  const mergeClientRecords = <T extends { id: string; clientId: string }>(
+    prev: T[],
+    clientId: string,
+    nextForClient: T[]
+  ): T[] => {
+    const nextById = new Map(nextForClient.map(item => [item.id, item]));
+    const updatedExisting: T[] = [];
+    const seen = new Set<string>();
+    for (const item of prev) {
+      if (item.clientId !== clientId) {
+        updatedExisting.push(item);
+      } else {
+        const replacement = nextById.get(item.id);
+        if (replacement) {
+          updatedExisting.push(replacement);
+          seen.add(item.id);
+        }
+      }
+    }
+    const newlyAdded = nextForClient.filter(item => !seen.has(item.id));
+    return [...newlyAdded, ...updatedExisting];
+  };
+
+  const saveClientBundle = (bundle: ClientEditBundle) => {
+    const clientId = bundle.client.id;
+    const oldClient = clients.find(c => c.id === clientId);
+    if (!oldClient) return;
+
+    const oldProjectsCount = projects.filter(p => p.clientId === clientId).length;
+    const cleanClient: Client = {
+      ...bundle.client,
+      company: bundle.client.company.trim() || oldClient.company,
+      name: bundle.client.name.trim(),
+      email: bundle.client.email.trim(),
+      phone: bundle.client.phone.trim(),
+      website: bundle.client.website?.trim() || undefined,
+      avatar: bundle.client.avatar.trim(),
+      billingAddress: bundle.client.billingAddress.trim(),
+      notes: bundle.client.notes,
+      projectValue: Number(bundle.client.projectValue) || 0,
+      amountPaid: Number(bundle.client.amountPaid) || 0,
+      amountPending: Number(bundle.client.amountPending) || 0,
+      healthScore: Math.max(0, Math.min(100, Number(bundle.client.healthScore) || 0)),
+      tags: bundle.client.tags.map(t => t.trim()).filter(Boolean),
+      currentProjectId:
+        bundle.client.currentProjectId && bundle.projects.some(p => p.id === bundle.client.currentProjectId)
+          ? bundle.client.currentProjectId
+          : undefined,
+    };
+
+    const syncedProjects = bundle.projects.map(p => ({
+      ...p,
+      clientId,
+      clientName: cleanClient.company,
+    }));
+    const syncedHosting = bundle.hostingDomains.map(h => ({
+      ...h,
+      clientId,
+      clientName: cleanClient.company,
+    }));
+    const syncedTasks = bundle.tasks.map(t => ({
+      ...t,
+      clientId,
+      clientName: cleanClient.company,
+    }));
+    const syncedInvoices = bundle.invoices.map(i => ({
+      ...i,
+      clientId,
+      clientName: cleanClient.name || cleanClient.company,
+      clientCompany: cleanClient.company,
+      clientEmail: cleanClient.email,
+    }));
+    const syncedTransactions = bundle.transactions.map(tx => ({
+      ...tx,
+      clientId,
+      clientName: cleanClient.company,
+    }));
+    const syncedDocs = bundle.documents.map(d => ({
+      ...d,
+      clientId,
+      clientName: cleanClient.company,
+    }));
+    const syncedComms = bundle.communications.map(c => ({
+      ...c,
+      clientId,
+      clientName: cleanClient.company,
+    }));
+
+    setClients(prev => prev.map(c => c.id === clientId ? cleanClient : c));
+    setProjects(prev => mergeClientRecords(prev, clientId, syncedProjects));
+    setHostingDomains(prev => mergeClientRecords(prev, clientId, syncedHosting));
+    setTasks(prev => mergeClientRecords(prev, clientId, syncedTasks));
+    setInvoices(prev => mergeClientRecords(prev, clientId, syncedInvoices));
+    setTransactions(prev => mergeClientRecords(prev, clientId, syncedTransactions));
+    setDocuments(prev => mergeClientRecords(prev, clientId, syncedDocs));
+    setCommunications(prev => mergeClientRecords(prev, clientId, syncedComms));
+
+    const valDelta = cleanClient.projectValue - (oldClient.projectValue || 0);
+    const paidDelta = cleanClient.amountPaid - (oldClient.amountPaid || 0);
+    const pendingDelta = cleanClient.amountPending - (oldClient.amountPending || 0);
+    const projCountDelta = syncedProjects.length - oldProjectsCount;
+
+    if (valDelta !== 0 || paidDelta !== 0 || pendingDelta !== 0 || projCountDelta !== 0) {
+      setKingdomStats(st => ({
+        ...st,
+        goldRevenue: Math.max(0, st.goldRevenue + valDelta),
+        collectedRevenue: Math.max(0, st.collectedRevenue + paidDelta),
+        darkElixirPending: Math.max(0, st.darkElixirPending + pendingDelta),
+        elixirActiveProjects: Math.max(0, st.elixirActiveProjects + projCountDelta),
+      }));
+    }
+
+    sound.playUpgrade();
+    addToast({
+      title: 'Client Details Updated!',
+      description: `All details & linked records saved for ${cleanClient.company}.`,
+      type: 'gold',
+    });
   };
 
   const addProject = (projectData: {
@@ -1517,6 +1649,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         triggerConfetti,
         addClient,
         updateClient,
+        saveClientBundle,
         deleteClient,
         addProject,
         updateProjectPhase,

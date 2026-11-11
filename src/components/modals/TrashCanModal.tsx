@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useDashboard } from '../../context/DashboardContext';
 import { sound } from '../../utils/audio';
+import { ClientAvatar } from '../common/ClientAvatar';
 
 export const TrashCanModal: React.FC = () => {
   const {
@@ -169,10 +170,11 @@ export const TrashCanModal: React.FC = () => {
                 >
                   {/* Client Info */}
                   <div className="flex items-start gap-3.5 min-w-0">
-                    <img
+                    <ClientAvatar
                       src={client.avatar}
-                      alt={client.name}
-                      className="w-10 h-10 rounded-xl object-cover border border-[#231822] shrink-0 opacity-80"
+                      name={client.name}
+                      company={client.company}
+                      className="w-10 h-10 rounded-xl opacity-80"
                     />
                     <div className="min-w-0 space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">

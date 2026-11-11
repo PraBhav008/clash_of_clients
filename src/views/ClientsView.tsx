@@ -10,13 +10,16 @@ import {
   Mail,
   SlidersHorizontal,
   UserPlus,
-  Trash2
+  Trash2,
+  Pencil
 } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { Client, ClientStatus } from '../types';
 import { sound } from '../utils/audio';
 import { ReturnButton } from '../components/common/ReturnButton';
+import { ClientAvatar } from '../components/common/ClientAvatar';
 import { DeleteClientConfirmModal } from '../components/modals/DeleteClientConfirmModal';
+import { EditClientModal } from '../components/modals/EditClientModal';
 
 export const ClientsView: React.FC = () => {
   const {
@@ -34,16 +37,18 @@ export const ClientsView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<'value' | 'health' | 'name' | 'pending'>('value');
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
 
   const filteredClients = useMemo(() => {
+    const q = searchQuery.toLowerCase();
     return clients.filter(c => {
       const matchStatus = statusFilter === 'All' || c.status === statusFilter;
       const matchPriority = priorityFilter === 'All' || c.priority === priorityFilter;
       const matchSearch = 
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
+        (c.name || '').toLowerCase().includes(q) ||
+        (c.company || '').toLowerCase().includes(q) ||
+        (c.email || '').toLowerCase().includes(q) ||
+        (c.tags || []).some(t => t.toLowerCase().includes(q));
       return matchStatus && matchPriority && matchSearch;
     }).sort((a, b) => {
       if (sortBy === 'value') return b.projectValue - a.projectValue;
@@ -232,16 +237,17 @@ export const ClientsView: React.FC = () => {
               <div>
                 <div className="flex items-start justify-between gap-2 sm:gap-3 mb-3 min-w-0">
                   <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                    <img
+                    <ClientAvatar
                       src={client.avatar}
-                      alt={client.name}
-                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover border border-[#232D42] shrink-0"
+                      name={client.name}
+                      company={client.company}
+                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl"
                     />
                     <div className="min-w-0">
                       <h3 className="font-heading font-bold text-sm text-slate-100 group-hover:text-[#ECC968] transition-colors truncate">
                         {client.company}
                       </h3>
-                      <p className="text-xs text-slate-400 truncate">{client.name}</p>
+                      <p className="text-xs text-slate-400 truncate">{client.name || 'No contact person'}</p>
                     </div>
                   </div>
 
@@ -264,14 +270,14 @@ export const ClientsView: React.FC = () => {
 
                 {/* Contact info */}
                 <div className="flex items-center gap-3 text-[11px] text-slate-400 mb-3 bg-[#0A0D14] px-3 py-1.5 rounded-lg border border-[#1E2638]">
-                  <span className="flex items-center gap-1 truncate" title={client.email}>
+                  <span className="flex items-center gap-1 truncate" title={client.email || 'No email'}>
                     <Mail className="w-3 h-3 text-slate-400 shrink-0" />
-                    <span className="truncate">{client.email}</span>
+                    <span className="truncate">{client.email || '—'}</span>
                   </span>
                   <span>·</span>
                   <span className="flex items-center gap-1 shrink-0">
                     <Phone className="w-3 h-3 text-slate-400 shrink-0" />
-                    <span>{client.phone}</span>
+                    <span>{client.phone || '—'}</span>
                   </span>
                 </div>
 
@@ -317,14 +323,30 @@ export const ClientsView: React.FC = () => {
               </div>
 
               {/* Bottom footer */}
-              <div className="pt-3 border-t border-[#1E2638] flex items-center justify-between text-xs">
-                <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Launch: <strong className="text-slate-200">{client.nextDeadline}</strong></span>
+              <div className="pt-3 border-t border-[#1E2638] flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="text-[11px] text-slate-400 flex items-center gap-1.5 min-w-0">
+                  <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                  <span className="truncate">Launch: <strong className="text-slate-200">{client.nextDeadline || 'Not set'}</strong></span>
                 </div>
 
-                <div className="flex items-center gap-1 text-[#ECC968] font-semibold text-xs group-hover:translate-x-0.5 transition-transform">
-                  Enter HQ <ChevronRight className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-2.5 ml-auto shrink-0">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      sound.playClick();
+                      setClientToEdit(client);
+                    }}
+                    className="btn-edit-glow px-2.5 py-1 rounded-lg text-[11px] flex items-center gap-1.5"
+                    title={`Edit all details of ${client.company}`}
+                  >
+                    <Pencil className="w-3 h-3 stroke-[2.4]" />
+                    <span>Edit Client</span>
+                  </button>
+
+                  <div className="flex items-center gap-1 text-[#ECC968] font-semibold text-xs group-hover:translate-x-0.5 transition-transform">
+                    Enter HQ <ChevronRight className="w-3.5 h-3.5" />
+                  </div>
                 </div>
               </div>
 
@@ -344,6 +366,13 @@ export const ClientsView: React.FC = () => {
           }
           setClientToDelete(null);
         }}
+      />
+
+      {/* Full Edit Client Modal */}
+      <EditClientModal
+        isOpen={!!clientToEdit}
+        client={clientToEdit}
+        onClose={() => setClientToEdit(null)}
       />
 
     </div>

@@ -12,7 +12,6 @@ import {
   Communication,
   NotificationItem,
   KingdomStats,
-  PerkId,
   TrashedClientBundle,
   CloudflareD1Config,
   CloudflareSyncPayload
@@ -35,9 +34,7 @@ import {
   initialCommunications,
   initialNotifications,
   initialKingdomStats,
-  createPhasesForProject,
-  availablePerks,
-  availableAchievements
+  createPhasesForProject
 } from '../data/initialData';
 import { sound } from '../utils/audio';
 
@@ -153,23 +150,8 @@ interface DashboardContextType {
   // Currency helper
   formatCurrency: (amount: number) => string;
 
-  // Gems & Perks System
-  gems: number;
-  unlockedPerks: PerkId[];
-  claimedAchievements: string[];
-  isGemForgeOpen: boolean;
-  setIsGemForgeOpen: (open: boolean) => void;
-  claimAchievement: (achievementId: string) => void;
-  unlockPerk: (perkId: PerkId) => boolean;
-  isPerkUnlocked: (perkId: PerkId) => boolean;
+  // Sprint Operations
   deployStandardSprint: (clientId: string) => void;
-  getAchievementProgress: (achievementId: string) => {
-    current: number;
-    target: number;
-    isCompleted: boolean;
-    isClaimed: boolean;
-  };
-  claimableAchievementsCount: number;
 
   // Trash Can System
   trashedClients: TrashedClientBundle[];
@@ -256,24 +238,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  // Gems & Perks State
-  const [gems, setGems] = useState<number>(() => {
-    const saved = localStorage.getItem('coc_v2_gems');
-    return saved !== null ? Number(saved) : 15;
-  });
-
-  const [unlockedPerks, setUnlockedPerks] = useState<PerkId[]>(() => {
-    const saved = localStorage.getItem('coc_v2_unlocked_perks');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [claimedAchievements, setClaimedAchievements] = useState<string[]>(() => {
-    const saved = localStorage.getItem('coc_v2_claimed_achievements');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [isGemForgeOpen, setIsGemForgeOpen] = useState<boolean>(false);
-
   // Trash Can State & Persistence
   const [trashedClients, setTrashedClients] = useState<TrashedClientBundle[]>(() => {
     const saved = localStorage.getItem('coc_v2_trash');
@@ -296,18 +260,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     sound.enabled = soundEnabled;
   }, [soundEnabled]);
-
-  useEffect(() => {
-    localStorage.setItem('coc_v2_gems', gems.toString());
-  }, [gems]);
-
-  useEffect(() => {
-    localStorage.setItem('coc_v2_unlocked_perks', JSON.stringify(unlockedPerks));
-  }, [unlockedPerks]);
-
-  useEffect(() => {
-    localStorage.setItem('coc_v2_claimed_achievements', JSON.stringify(claimedAchievements));
-  }, [claimedAchievements]);
 
   useEffect(() => {
     localStorage.setItem('coc_v2_trash', JSON.stringify(trashedClients));
@@ -408,9 +360,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     hostingDomains,
     communications,
     leads,
-    kingdomStats,
-    gems,
-    unlockedPerks
+    kingdomStats
   ]);
 
   // Keyboard shortcut for search
@@ -474,9 +424,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setCommunications([]);
     setNotifications([]);
     setKingdomStats(initialKingdomStats);
-    setGems(15);
-    setUnlockedPerks([]);
-    setClaimedAchievements([]);
     setSelectedClientId(null);
     sound.playClick();
     addToast({
@@ -941,9 +888,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         hostingDomains,
         communications,
         leads,
-        kingdomStats,
-        gems,
-        unlockedPerkIds: unlockedPerks
+        kingdomStats
       };
 
       const activeConfig = getSavedCloudflareConfig();
@@ -1006,8 +951,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (Array.isArray(p.communications)) setCommunications(p.communications);
         if (Array.isArray(p.leads)) setLeads(p.leads);
         if (p.kingdomStats) setKingdomStats(p.kingdomStats);
-        if (typeof p.gems === 'number') setGems(p.gems);
-        if (Array.isArray(p.unlockedPerkIds)) setUnlockedPerks(p.unlockedPerkIds as any);
 
         if (!silent) {
           triggerConfetti();
@@ -1348,161 +1291,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     sound.playClick();
   };
 
-  // Gems & Achievements System
-  const getAchievementProgress = (achievementId: string) => {
-    const isClaimed = claimedAchievements.includes(achievementId);
-    let current = 0;
-    let target = 1;
-    let isCompleted = false;
-
-    switch (achievementId) {
-      case 'ach_level_2':
-        current = kingdomStats.level;
-        target = 2;
-        isCompleted = kingdomStats.level >= 2;
-        break;
-      case 'ach_level_3':
-        current = kingdomStats.level;
-        target = 3;
-        isCompleted = kingdomStats.level >= 3;
-        break;
-      case 'ach_first_client':
-        current = clients.length;
-        target = 1;
-        isCompleted = clients.length >= 1;
-        break;
-      case 'ach_three_clients':
-        current = clients.length;
-        target = 3;
-        isCompleted = clients.length >= 3;
-        break;
-      case 'ach_tasks_3': {
-        const done = tasks.filter(t => t.status === 'Completed').length;
-        current = done;
-        target = 3;
-        isCompleted = done >= 3;
-        break;
-      }
-      case 'ach_tasks_8': {
-        const done = tasks.filter(t => t.status === 'Completed').length;
-        current = done;
-        target = 8;
-        isCompleted = done >= 8;
-        break;
-      }
-      case 'ach_revenue_50k':
-        current = kingdomStats.collectedRevenue;
-        target = 50000;
-        isCompleted = kingdomStats.collectedRevenue >= 50000;
-        break;
-      case 'ach_revenue_100k':
-        current = kingdomStats.collectedRevenue;
-        target = 100000;
-        isCompleted = kingdomStats.collectedRevenue >= 100000;
-        break;
-      case 'ach_project_launch': {
-        const maxPhase = projects.length > 0 ? Math.max(...projects.map(p => p.currentPhaseIndex)) : 0;
-        current = maxPhase >= 9 ? 10 : maxPhase;
-        target = 10;
-        isCompleted = maxPhase >= 9;
-        break;
-      }
-      case 'ach_domains_2':
-        current = hostingDomains.length;
-        target = 2;
-        isCompleted = hostingDomains.length >= 2;
-        break;
-      case 'ach_comms_3':
-        current = communications.length;
-        target = 3;
-        isCompleted = communications.length >= 3;
-        break;
-      default:
-        break;
-    }
-
-    return { current, target, isCompleted, isClaimed };
-  };
-
-  const claimableAchievementsCount = availableAchievements.filter(ach => {
-    const prog = getAchievementProgress(ach.id);
-    return prog.isCompleted && !prog.isClaimed;
-  }).length;
-
-  const claimAchievement = (achievementId: string) => {
-    const ach = availableAchievements.find(a => a.id === achievementId);
-    if (!ach) return;
-    if (claimedAchievements.includes(achievementId)) return;
-    const progress = getAchievementProgress(achievementId);
-    if (!progress.isCompleted) return;
-
-    sound.playGem();
-    triggerConfetti();
-    setClaimedAchievements(prev => [...prev, achievementId]);
-    setGems(prev => prev + ach.gemReward);
-
-    setKingdomStats(prev => {
-      const nextXP = prev.currentXP + ach.xpReward;
-      let nextLevel = prev.level;
-      let nextTitle = prev.title;
-      if (nextXP >= prev.maxXP) {
-        nextLevel += 1;
-        nextTitle = nextLevel === 2 ? 'Websmith' : nextLevel === 3 ? 'Digital Architect' : 'Agency Master';
-        addToast({
-          title: '⚔️ KINGDOM LEVEL UP!',
-          description: `You reached Level ${nextLevel} — ${nextTitle}!`,
-          type: 'gold'
-        });
-      }
-      return {
-        ...prev,
-        currentXP: nextXP % prev.maxXP,
-        level: nextLevel,
-        title: nextTitle,
-        gems: prev.gems + ach.gemReward
-      };
-    });
-
-    addToast({
-      title: `💎 +${ach.gemReward} Gems Claimed!`,
-      description: `Completed milestone: ${ach.title}`,
-      type: 'gold'
-    });
-  };
-
-  const unlockPerk = (perkId: PerkId): boolean => {
-    const perk = availablePerks.find(p => p.id === perkId);
-    if (!perk) return false;
-    if (unlockedPerks.includes(perkId)) return true;
-
-    if (gems < perk.gemCost) {
-      sound.playClick();
-      addToast({
-        title: 'Not Enough Gems',
-        description: `Requires ${perk.gemCost} 💎 (You have ${gems} 💎). Complete Clan Milestones to earn gems!`,
-        type: 'danger'
-      });
-      return false;
-    }
-
-    sound.playGem();
-    triggerConfetti();
-    setGems(prev => prev - perk.gemCost);
-    setUnlockedPerks(prev => [...prev, perkId]);
-
-    addToast({
-      title: '🔓 Perk Permanently Unlocked!',
-      description: `${perk.name} is now permanently unlocked and active.`,
-      type: 'gold'
-    });
-
-    return true;
-  };
-
-  const isPerkUnlocked = (perkId: PerkId): boolean => {
-    return unlockedPerks.includes(perkId);
-  };
-
   const deployStandardSprint = (targetClientId?: string) => {
     const cId = targetClientId || selectedClientId || (clients[0] ? clients[0].id : '');
     const client = clients.find(c => c.id === cId);
@@ -1678,17 +1466,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addToast,
         removeToast,
         formatCurrency,
-        gems,
-        unlockedPerks,
-        claimedAchievements,
-        isGemForgeOpen,
-        setIsGemForgeOpen,
-        claimAchievement,
-        unlockPerk,
-        isPerkUnlocked,
         deployStandardSprint,
-        getAchievementProgress,
-        claimableAchievementsCount,
         trashedClients,
         isTrashOpen,
         setIsTrashOpen,

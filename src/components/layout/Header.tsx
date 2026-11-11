@@ -12,7 +12,6 @@ import {
   Briefcase,
   Layers,
   Sparkles,
-  Gem,
   UploadCloud,
   LogOut
 } from 'lucide-react';
@@ -38,9 +37,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, isMobileMenu
     setActiveView,
     openClientHQ,
     formatCurrency,
-    gems,
-    setIsGemForgeOpen,
-    claimableAchievementsCount,
     cloudflareConfig,
     isCloudflareSyncing,
     syncToCloudflare
@@ -220,54 +216,10 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, isMobileMenu
               </span>
             </div>
           </div>
-
-          {/* Gem Forge & Armory (Gems Vault) */}
-          <div
-            onClick={() => {
-              sound.playClick();
-              setIsGemForgeOpen(true);
-            }}
-            className="h-9 px-3 rounded-xl bg-gradient-to-r from-[#172138] to-[#141C2E] border border-[#C9A038]/50 hover:border-[#C9A038] hover:shadow-[0_0_12px_rgba(201,160,56,0.25)] flex items-center gap-2 transition-all cursor-pointer group shadow-sm shrink-0"
-            title="Citadel Gem Forge & Armory"
-          >
-            <Gem className="w-4 h-4 text-[#ECC968] group-hover:scale-110 transition-transform shrink-0" />
-            <div className="flex flex-col justify-center leading-none">
-              <div className="text-[9px] uppercase font-bold text-slate-400 group-hover:text-slate-300 tracking-wider flex items-center gap-1 mb-0.5">
-                <span>Gems</span>
-                {claimableAchievementsCount > 0 && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#ECC968] animate-ping" />
-                )}
-              </div>
-              <div className="text-xs font-black text-[#ECC968] flex items-center gap-1">
-                <span>{gems}</span>
-                {claimableAchievementsCount > 0 && (
-                  <span className="text-[9px] px-1 py-0.2 rounded bg-[#C9A038] text-slate-950 font-black">
-                    +{claimableAchievementsCount}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Right: Search, Cloud Sync, Sound, Quick Add, Notifications */}
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-          {/* Mobile Gems Button (Only on < lg screens) */}
-          <button
-            onClick={() => {
-              sound.playClick();
-              setIsGemForgeOpen(true);
-            }}
-            className="lg:hidden h-8 sm:h-9 px-2 sm:px-2.5 rounded-lg sm:rounded-xl bg-[#172138] border border-[#C9A038]/50 active:border-[#C9A038] text-[11px] sm:text-xs font-bold text-[#ECC968] flex items-center gap-1 sm:gap-1.5 shrink-0 shadow-sm"
-            title="Open Gem Forge"
-          >
-            <Gem className="w-3.5 h-3.5 text-[#ECC968]" />
-            <span>{gems}</span>
-            {claimableAchievementsCount > 0 && (
-              <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#ECC968] animate-ping" />
-            )}
-          </button>
-
           {/* Global Search */}
           <button
             onClick={() => setIsSearchOpen(true)}

@@ -7,7 +7,6 @@ import { Sidebar } from './components/layout/Sidebar';
 import { GlobalSearchModal } from './components/modals/GlobalSearchModal';
 import { QuickActionModal } from './components/modals/QuickActionModal';
 import { RecruitClientModal } from './components/modals/RecruitClientModal';
-import { GemForgeModal } from './components/modals/GemForgeModal';
 import { TrashCanModal } from './components/modals/TrashCanModal';
 import { FloatingQuickActionButton } from './components/common/FloatingQuickActionButton';
 import { ToastContainer } from './components/common/ToastContainer';
@@ -98,7 +97,6 @@ const DashboardContent: React.FC = () => {
       <GlobalSearchModal />
       <QuickActionModal />
       <RecruitClientModal />
-      <GemForgeModal />
       <TrashCanModal />
       <ToastContainer />
     </div>

@@ -218,34 +218,6 @@ export interface KingdomStats {
   collectedRevenue: number;
   totalExpenses: number;
   netProfit: number;
-  gems: number;
-}
-
-export type PerkId = 
-  | 'sprint_deployer'
-  | 'whatsapp_speed_dial'
-  | 'pdf_invoice_stamp'
-  | 'domain_guardian'
-  | 'client_health_radar';
-
-export interface DashboardPerk {
-  id: PerkId;
-  name: string;
-  category: 'workflow' | 'billing' | 'communication' | 'infrastructure' | 'intelligence';
-  gemCost: number;
-  description: string;
-  benefit: string;
-  iconName: string;
-}
-
-export interface ClanAchievement {
-  id: string;
-  title: string;
-  description: string;
-  gemReward: number;
-  xpReward: number;
-  targetCount: number;
-  category: 'level' | 'tasks' | 'clients' | 'revenue' | 'infrastructure' | 'communication';
 }
 
 export interface TrashedClientBundle {
@@ -282,8 +254,6 @@ export interface CloudflareSyncPayload {
   communications: Communication[];
   leads: Lead[];
   kingdomStats: KingdomStats;
-  gems: number;
-  unlockedPerkIds: string[];
 }
 
 

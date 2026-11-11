@@ -16,8 +16,6 @@ import {
   ShieldAlert,
   Shield,
   X,
-  Gem,
-  Sparkles,
   Trash2,
   LogOut
 } from 'lucide-react';
@@ -40,9 +38,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileMenuOpen, onCloseMobil
     hostingDomains,
     leads,
     clients,
-    gems,
-    setIsGemForgeOpen,
-    claimableAchievementsCount,
     trashedClients,
     setIsTrashOpen
   } = useDashboard();
@@ -152,32 +147,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileMenuOpen, onCloseMobil
           </p>
         </div>
       )}
-
-      {/* Gem Forge & Armory Trigger */}
-      <div 
-        onClick={() => {
-          sound.playClick();
-          setIsGemForgeOpen(true);
-          onCloseMobileMenu();
-        }}
-        className="mx-2 mb-2 p-3 rounded-xl bg-[#141B2B] border border-[#C9A038]/40 hover:border-[#C9A038] cursor-pointer transition-all text-xs group"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[#ECC968] font-bold text-xs">
-            <Gem className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            <span>Gem Forge</span>
-          </div>
-          <span className="font-bold text-[#ECC968] bg-[#C9A038]/20 px-2 py-0.5 rounded-full text-[10px] border border-[#C9A038]/30 flex items-center gap-1">
-            <Gem className="w-3 h-3 text-[#ECC968]" />
-            <span>{gems}</span>
-          </span>
-        </div>
-        <p className="text-[10px] text-slate-400 mt-1">
-          {claimableAchievementsCount > 0
-            ? `✨ ${claimableAchievementsCount} milestone reward ready!`
-            : 'Unlock speed tools & shortcuts'}
-        </p>
-      </div>
 
       {/* Trashed Items Shortcut */}
       {trashedClients.length > 0 && (

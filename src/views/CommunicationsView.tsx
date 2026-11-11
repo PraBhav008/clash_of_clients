@@ -5,9 +5,6 @@ import {
   Search,
   ArrowRight,
   Zap,
-  Lock,
-  Unlock,
-  Gem,
   Send,
   ExternalLink
 } from 'lucide-react';
@@ -21,12 +18,9 @@ export const CommunicationsView: React.FC = () => {
     clients,
     setActiveModal,
     openClientHQ,
-    isPerkUnlocked,
-    unlockPerk,
     addToast
   } = useDashboard();
 
-  const isSpeedDialUnlocked = isPerkUnlocked('whatsapp_speed_dial');
   const [targetClientId, setTargetClientId] = useState<string>(clients[0]?.id || '');
   const [typeFilter, setTypeFilter] = useState<string>('All');
   const [search, setSearch] = useState<string>('');
@@ -108,107 +102,76 @@ export const CommunicationsView: React.FC = () => {
         </button>
       </div>
 
-      {/* Perk Banner: WhatsApp Speed Dial */}
-      {isSpeedDialUnlocked ? (
-        <div className="p-4 rounded-2xl bg-[#141B2B] border border-[#C9A038]/40 space-y-3 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#C9A038]/20 border border-[#C9A038]/50 flex items-center justify-center text-[#ECC968] shrink-0">
-                <Zap className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="font-heading font-bold text-xs text-slate-100">WhatsApp Speed Dial Engine</h4>
-                  <span className="text-[10px] px-2 py-0.2 rounded-full bg-[#C9A038]/15 text-[#ECC968] font-bold border border-[#C9A038]/30">UNLOCKED</span>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">1-click pre-filled WhatsApp action buttons. Open chats without manual copy-pasting.</p>
-              </div>
-            </div>
-
-            {clients.length > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] text-slate-400">Recipient:</span>
-                <select
-                  value={targetClientId}
-                  onChange={e => setTargetClientId(e.target.value)}
-                  className="bg-[#0A0D14] border border-[#232D42] text-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-[#C9A038]"
-                >
-                  {clients.map(c => (
-                    <option key={c.id} value={c.id}>{c.company} ({c.phone || 'No phone'})</option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 border-t border-[#1E2638]">
-            <button
-              onClick={() => handleSendWhatsApp('milestone')}
-              className="p-2.5 rounded-xl bg-[#0A0D14] hover:bg-[#151C2C] border border-[#232D42] hover:border-[#C9A038]/50 text-left transition-all group flex items-center justify-between"
-            >
-              <div>
-                <div className="text-xs font-bold text-slate-200 group-hover:text-[#ECC968] flex items-center gap-1.5">
-                  <Send className="w-3 h-3 text-[#C9A038]" /> Milestone Ready
-                </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">Ask client for feedback/approval</div>
-              </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-[#ECC968]" />
-            </button>
-
-            <button
-              onClick={() => handleSendWhatsApp('invoice')}
-              className="p-2.5 rounded-xl bg-[#0A0D14] hover:bg-[#151C2C] border border-[#232D42] hover:border-[#C9A038]/50 text-left transition-all group flex items-center justify-between"
-            >
-              <div>
-                <div className="text-xs font-bold text-slate-200 group-hover:text-[#ECC968] flex items-center gap-1.5">
-                  <Send className="w-3 h-3 text-[#C9A038]" /> Payment Reminder
-                </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">Polite milestone invoice follow-up</div>
-              </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-[#ECC968]" />
-            </button>
-
-            <button
-              onClick={() => handleSendWhatsApp('live')}
-              className="p-2.5 rounded-xl bg-[#0A0D14] hover:bg-[#151C2C] border border-[#232D42] hover:border-[#C9A038]/50 text-left transition-all group flex items-center justify-between"
-            >
-              <div>
-                <div className="text-xs font-bold text-slate-200 group-hover:text-[#ECC968] flex items-center gap-1.5">
-                  <Send className="w-3 h-3 text-[#C9A038]" /> Website Live Celebration
-                </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">Congratulate & hand over project</div>
-              </div>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-[#ECC968]" />
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="p-4 rounded-2xl bg-[#121826] border border-[#20293D] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      {/* WhatsApp Speed Dial Engine */}
+      <div className="p-4 rounded-2xl bg-[#141B2B] border border-[#C9A038]/40 space-y-3 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#0A0D14] border border-[#232D42] flex items-center justify-center text-slate-400 shrink-0">
-              <Lock className="w-4 h-4 text-[#C9A038]" />
+            <div className="w-9 h-9 rounded-xl bg-[#C9A038]/20 border border-[#C9A038]/50 flex items-center justify-center text-[#ECC968] shrink-0">
+              <Zap className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h4 className="font-heading font-bold text-xs text-slate-300">WhatsApp Speed Dial Engine</h4>
-                <span className="text-[10px] px-2 py-0.2 rounded-full bg-[#151C2C] text-slate-400 border border-[#232D42] font-semibold flex items-center gap-1">
-                  <Gem className="w-3 h-3 text-[#ECC968]" /> 15 Gems to Unlock
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">Unlocks 1-click pre-filled WhatsApp dispatches for milestone feedback, payment reminders, and live handovers.</p>
+              <h4 className="font-heading font-bold text-xs text-slate-100">WhatsApp Speed Dial Engine</h4>
+              <p className="text-xs text-slate-400 mt-0.5">1-click pre-filled WhatsApp action buttons. Open chats without manual copy-pasting.</p>
             </div>
           </div>
+
+          {clients.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-slate-400">Recipient:</span>
+              <select
+                value={targetClientId}
+                onChange={e => setTargetClientId(e.target.value)}
+                className="bg-[#0A0D14] border border-[#232D42] text-slate-200 rounded-lg px-2.5 py-1 text-xs outline-none focus:border-[#C9A038]"
+              >
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>{c.company} ({c.phone || 'No phone'})</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 border-t border-[#1E2638]">
           <button
-            onClick={() => unlockPerk('whatsapp_speed_dial')}
-            className="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0"
+            onClick={() => handleSendWhatsApp('milestone')}
+            className="p-2.5 rounded-xl bg-[#0A0D14] hover:bg-[#151C2C] border border-[#232D42] hover:border-[#C9A038]/50 text-left transition-all group flex items-center justify-between"
           >
-            <Unlock className="w-3.5 h-3.5" />
-            <span>Unlock (15</span>
-            <Gem className="w-3.5 h-3.5 fill-[#ECC968]/40" />
-            <span>)</span>
+            <div>
+              <div className="text-xs font-bold text-slate-200 group-hover:text-[#ECC968] flex items-center gap-1.5">
+                <Send className="w-3 h-3 text-[#C9A038]" /> Milestone Ready
+              </div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Ask client for feedback/approval</div>
+            </div>
+            <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-[#ECC968]" />
+          </button>
+
+          <button
+            onClick={() => handleSendWhatsApp('invoice')}
+            className="p-2.5 rounded-xl bg-[#0A0D14] hover:bg-[#151C2C] border border-[#232D42] hover:border-[#C9A038]/50 text-left transition-all group flex items-center justify-between"
+          >
+            <div>
+              <div className="text-xs font-bold text-slate-200 group-hover:text-[#ECC968] flex items-center gap-1.5">
+                <Send className="w-3 h-3 text-[#C9A038]" /> Payment Reminder
+              </div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Polite milestone invoice follow-up</div>
+            </div>
+            <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-[#ECC968]" />
+          </button>
+
+          <button
+            onClick={() => handleSendWhatsApp('live')}
+            className="p-2.5 rounded-xl bg-[#0A0D14] hover:bg-[#151C2C] border border-[#232D42] hover:border-[#C9A038]/50 text-left transition-all group flex items-center justify-between"
+          >
+            <div>
+              <div className="text-xs font-bold text-slate-200 group-hover:text-[#ECC968] flex items-center gap-1.5">
+                <Send className="w-3 h-3 text-[#C9A038]" /> Website Live Celebration
+              </div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Congratulate & hand over project</div>
+            </div>
+            <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-[#ECC968]" />
           </button>
         </div>
-      )}
+      </div>
 
       {/* Filter and Search Bar */}
       <div className="p-4 rounded-2xl bg-[#121826] border border-[#20293D] flex flex-col sm:flex-row items-center justify-between gap-3">

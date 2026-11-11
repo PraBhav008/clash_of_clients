@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Castle,
-  ArrowLeft,
   Activity,
   Coins,
   CheckCircle2,
@@ -12,19 +11,13 @@ import {
   Mail,
   Receipt,
   Swords,
-  Library,
   Hammer,
   MessageSquare,
   Globe,
   AlertTriangle,
-  FileText,
-  Key,
   Edit3,
   UserPlus,
   Zap,
-  Gem,
-  Unlock,
-  ShieldCheck,
   TrendingUp,
   Send,
   Trash2,
@@ -59,16 +52,11 @@ export const ClientHQView: React.FC = () => {
     deleteClient,
     addTask,
     addInvoice,
-    addToast,
-    isPerkUnlocked,
-    unlockPerk
+    addToast
   } = useDashboard();
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  const isRadarUnlocked = isPerkUnlocked('client_health_radar');
-  const isSpeedDialUnlocked = isPerkUnlocked('whatsapp_speed_dial');
 
   const client = clients.find(c => c.id === selectedClientId) || clients[0];
   const project =
@@ -366,26 +354,24 @@ export const ClientHQView: React.FC = () => {
                 )}
               </div>
 
-              {/* Speed Dial Perk: Direct Client Actions */}
-              {isSpeedDialUnlocked && (
-                <div className="flex flex-wrap items-center gap-2 pt-2.5">
-                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
-                    <Zap className="w-3 h-3 text-[#C9A038]" /> Speed Dial:
-                  </span>
-                  <button
-                    onClick={() => handleClientWhatsApp('milestone')}
-                    className="px-2 py-0.5 rounded-lg bg-[#0A0D14] hover:bg-[#151C2C] text-[#ECC968] border border-[#232D42] text-[10px] font-semibold flex items-center gap-1 transition-all"
-                  >
-                    <Send className="w-2.5 h-2.5 text-[#C9A038]" /> Milestone Ready
-                  </button>
-                  <button
-                    onClick={() => handleClientWhatsApp('invoice')}
-                    className="px-2 py-0.5 rounded-lg bg-[#0A0D14] hover:bg-[#151C2C] text-[#ECC968] border border-[#232D42] text-[10px] font-semibold flex items-center gap-1 transition-all"
-                  >
-                    <Send className="w-2.5 h-2.5 text-[#C9A038]" /> Invoice Alert
-                  </button>
-                </div>
-              )}
+              {/* Speed Dial: Direct Client Actions */}
+              <div className="flex flex-wrap items-center gap-2 pt-2.5">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
+                  <Zap className="w-3 h-3 text-[#C9A038]" /> Speed Dial:
+                </span>
+                <button
+                  onClick={() => handleClientWhatsApp('milestone')}
+                  className="px-2 py-0.5 rounded-lg bg-[#0A0D14] hover:bg-[#151C2C] text-[#ECC968] border border-[#232D42] text-[10px] font-semibold flex items-center gap-1 transition-all"
+                >
+                  <Send className="w-2.5 h-2.5 text-[#C9A038]" /> Milestone Ready
+                </button>
+                <button
+                  onClick={() => handleClientWhatsApp('invoice')}
+                  className="px-2 py-0.5 rounded-lg bg-[#0A0D14] hover:bg-[#151C2C] text-[#ECC968] border border-[#232D42] text-[10px] font-semibold flex items-center gap-1 transition-all"
+                >
+                  <Send className="w-2.5 h-2.5 text-[#C9A038]" /> Invoice Alert
+                </button>
+              </div>
             </div>
           </div>
 
@@ -417,113 +403,82 @@ export const ClientHQView: React.FC = () => {
         </div>
       </div>
 
-      {/* Perk Banner / Feature: VIP Client Health Radar & Upsell Recommender */}
-      {isRadarUnlocked ? (
-        <div className="p-5 rounded-2xl bg-[#141B2B] border border-[#C9A038]/40 space-y-4 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#C9A038]/20 border border-[#C9A038]/50 flex items-center justify-center text-[#ECC968] shrink-0">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="font-heading font-bold text-xs text-slate-100">VIP Client Health Radar & Upsell Recommender</h4>
-                  <span className="text-[10px] px-2 py-0.2 rounded-full bg-[#C9A038]/15 text-[#ECC968] font-bold border border-[#C9A038]/30">UNLOCKED</span>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">Automated high-margin account expansion proposals tailored for {client.company}.</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 text-xs">
-              <span className="px-2.5 py-1 rounded-lg bg-[#0A0D14] border border-[#232D42] text-slate-300 font-medium">
-                Retention Risk: <strong className="text-emerald-400">Minimal</strong>
-              </span>
-              <span className="px-2.5 py-1 rounded-lg bg-[#0A0D14] border border-[#232D42] text-slate-300 font-medium">
-                Loyalty Index: <strong className="text-[#ECC968]">96/100</strong>
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1 border-t border-[#1E2638]">
-            <div className="p-3.5 rounded-xl bg-[#0A0D14] border border-[#232D42] flex flex-col justify-between gap-2">
-              <div>
-                <span className="text-[10px] uppercase font-bold tracking-wider text-[#ECC968] block">High-Value Retainer</span>
-                <h5 className="font-heading font-bold text-xs text-slate-100 mt-0.5">Annual SLA & Support Retainer</h5>
-                <p className="text-[11px] text-slate-400 mt-1">12-month contract: 4hrs monthly updates, daily backups, uptime SLA.</p>
-              </div>
-              <div className="flex items-center justify-between pt-2 border-t border-[#182033]">
-                <span className="font-mono text-xs font-bold text-[#ECC968]">$1,200/yr</span>
-                <button
-                  onClick={handleDeployRetainer}
-                  className="btn-gold px-2.5 py-1 rounded-lg text-[10px] font-bold"
-                >
-                  + Draft Invoice
-                </button>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#0A0D14] border border-[#232D42] flex flex-col justify-between gap-2">
-              <div>
-                <span className="text-[10px] uppercase font-bold tracking-wider text-[#ECC968] block">Speed & SEO Package</span>
-                <h5 className="font-heading font-bold text-xs text-slate-100 mt-0.5">Core Web Vitals Sprint</h5>
-                <p className="text-[11px] text-slate-400 mt-1">Boost mobile speed to 95+ score, compress WebP assets, lazy loading.</p>
-              </div>
-              <div className="flex items-center justify-between pt-2 border-t border-[#182033]">
-                <span className="font-mono text-xs font-bold text-[#ECC968]">$450 one-off</span>
-                <button
-                  onClick={handleDeployOptimizationTask}
-                  className="btn-gold px-2.5 py-1 rounded-lg text-[10px] font-bold"
-                >
-                  + Deploy Mission
-                </button>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#0A0D14] border border-[#232D42] flex flex-col justify-between gap-2">
-              <div>
-                <span className="text-[10px] uppercase font-bold tracking-wider text-[#ECC968] block">Infrastructure</span>
-                <h5 className="font-heading font-bold text-xs text-slate-100 mt-0.5">Cloud Firewall & Security</h5>
-                <p className="text-[11px] text-slate-400 mt-1">Managed Cloudflare WAF, SSL security monitoring, and automated database backups.</p>
-              </div>
-              <div className="flex items-center justify-between pt-2 border-t border-[#182033]">
-                <span className="font-mono text-xs font-bold text-[#ECC968]">$350/yr</span>
-                <button
-                  onClick={handleDeploySecurityUpsell}
-                  className="btn-gold px-2.5 py-1 rounded-lg text-[10px] font-bold"
-                >
-                  + Draft Invoice
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="p-4 rounded-2xl bg-[#121826] border border-[#20293D] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      {/* VIP Client Health Radar & Upsell Recommender */}
+      <div className="p-5 rounded-2xl bg-[#141B2B] border border-[#C9A038]/40 space-y-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#0A0D14] border border-[#232D42] flex items-center justify-center text-slate-400 shrink-0">
-              <Lock className="w-4 h-4 text-[#C9A038]" />
+            <div className="w-9 h-9 rounded-xl bg-[#C9A038]/20 border border-[#C9A038]/50 flex items-center justify-center text-[#ECC968] shrink-0">
+              <TrendingUp className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h4 className="font-heading font-bold text-xs text-slate-300">VIP Client Health Radar & Upsell Recommender</h4>
-                <span className="text-[10px] px-2 py-0.2 rounded-full bg-[#151C2C] text-slate-400 border border-[#232D42] font-semibold flex items-center gap-1">
-                  <Gem className="w-3 h-3 text-[#ECC968]" /> 25 Gems to Unlock
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">Unlocks AI health diagnostics, retention risk meters, and 1-click high-margin upsell proposals ($1,200 retainer, $450 speed boost).</p>
+              <h4 className="font-heading font-bold text-xs text-slate-100">VIP Client Health Radar & Upsell Recommender</h4>
+              <p className="text-xs text-slate-400 mt-0.5">Automated high-margin account expansion proposals tailored for {client.company}.</p>
             </div>
           </div>
-          <button
-            onClick={() => unlockPerk('client_health_radar')}
-            className="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0"
-          >
-            <Unlock className="w-3.5 h-3.5" />
-            <span>Unlock (25</span>
-            <Gem className="w-3.5 h-3.5 fill-[#ECC968]/40" />
-            <span>)</span>
-          </button>
+
+          <div className="flex items-center gap-2 text-xs">
+            <span className="px-2.5 py-1 rounded-lg bg-[#0A0D14] border border-[#232D42] text-slate-300 font-medium">
+              Retention Risk: <strong className="text-emerald-400">Minimal</strong>
+            </span>
+            <span className="px-2.5 py-1 rounded-lg bg-[#0A0D14] border border-[#232D42] text-slate-300 font-medium">
+              Loyalty Index: <strong className="text-[#ECC968]">96/100</strong>
+            </span>
+          </div>
         </div>
-      )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1 border-t border-[#1E2638]">
+          <div className="p-3.5 rounded-xl bg-[#0A0D14] border border-[#232D42] flex flex-col justify-between gap-2">
+            <div>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-[#ECC968] block">High-Value Retainer</span>
+              <h5 className="font-heading font-bold text-xs text-slate-100 mt-0.5">Annual SLA & Support Retainer</h5>
+              <p className="text-[11px] text-slate-400 mt-1">12-month contract: 4hrs monthly updates, daily backups, uptime SLA.</p>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-[#182033]">
+              <span className="font-mono text-xs font-bold text-[#ECC968]">$1,200/yr</span>
+              <button
+                onClick={handleDeployRetainer}
+                className="btn-gold px-2.5 py-1 rounded-lg text-[10px] font-bold"
+              >
+                + Draft Invoice
+              </button>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-[#0A0D14] border border-[#232D42] flex flex-col justify-between gap-2">
+            <div>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-[#ECC968] block">Speed & SEO Package</span>
+              <h5 className="font-heading font-bold text-xs text-slate-100 mt-0.5">Core Web Vitals Sprint</h5>
+              <p className="text-[11px] text-slate-400 mt-1">Boost mobile speed to 95+ score, compress WebP assets, lazy loading.</p>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-[#182033]">
+              <span className="font-mono text-xs font-bold text-[#ECC968]">$450 one-off</span>
+              <button
+                onClick={handleDeployOptimizationTask}
+                className="btn-gold px-2.5 py-1 rounded-lg text-[10px] font-bold"
+              >
+                + Deploy Mission
+              </button>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-[#0A0D14] border border-[#232D42] flex flex-col justify-between gap-2">
+            <div>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-[#ECC968] block">Infrastructure</span>
+              <h5 className="font-heading font-bold text-xs text-slate-100 mt-0.5">Cloud Firewall & Security</h5>
+              <p className="text-[11px] text-slate-400 mt-1">Managed Cloudflare WAF, SSL security monitoring, and automated database backups.</p>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-[#182033]">
+              <span className="font-mono text-xs font-bold text-[#ECC968]">$350/yr</span>
+              <button
+                onClick={handleDeploySecurityUpsell}
+                className="btn-gold px-2.5 py-1 rounded-lg text-[10px] font-bold"
+              >
+                + Draft Invoice
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Tabs */}
       <div className="flex items-center gap-1.5 border-b border-[#1E2638] pb-2 overflow-x-auto no-scrollbar text-xs">

@@ -5,10 +5,7 @@ import {
   CheckCircle2,
   Clock,
   Search,
-  Zap,
-  Lock,
-  Unlock,
-  Gem
+  Zap
 } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { TaskStatus } from '../types';
@@ -22,8 +19,6 @@ export const TasksView: React.FC = () => {
     toggleTaskStatus,
     setActiveModal,
     openClientHQ,
-    isPerkUnlocked,
-    unlockPerk,
     deployStandardSprint
   } = useDashboard();
 
@@ -35,7 +30,6 @@ export const TasksView: React.FC = () => {
 
   const dailyMissions = tasks.filter(t => t.isDailyMission);
   const completedDailyCount = dailyMissions.filter(t => t.status === 'Completed').length;
-  const isSprintUnlocked = isPerkUnlocked('sprint_deployer');
 
   return (
     <div className="space-y-6">
@@ -69,69 +63,38 @@ export const TasksView: React.FC = () => {
         </button>
       </div>
 
-      {/* Perk Banner: 1-Click Sprint Deployer */}
-      {isSprintUnlocked ? (
-        <div className="p-4 rounded-2xl bg-[#141B2B] border border-[#C9A038]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#C9A038]/20 border border-[#C9A038]/50 flex items-center justify-center text-[#ECC968] shrink-0">
-              <Zap className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="font-heading font-bold text-xs text-slate-100">1-Click Website Sprint Deployer</h4>
-                <span className="text-[10px] px-2 py-0.2 rounded-full bg-[#C9A038]/15 text-[#ECC968] font-bold border border-[#C9A038]/30">UNLOCKED</span>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">Instantly populate an 8-mission full-lifecycle website sprint with real deadlines & XP.</p>
-            </div>
+      {/* 1-Click Sprint Deployer */}
+      <div className="p-4 rounded-2xl bg-[#141B2B] border border-[#C9A038]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#C9A038]/20 border border-[#C9A038]/50 flex items-center justify-center text-[#ECC968] shrink-0">
+            <Zap className="w-5 h-5" />
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            {clients.length > 0 && (
-              <select
-                value={sprintClientId}
-                onChange={e => setSprintClientId(e.target.value)}
-                className="bg-[#0A0D14] border border-[#232D42] text-slate-200 rounded-lg px-2.5 py-1.5 text-xs outline-none"
-              >
-                {clients.map(c => (
-                  <option key={c.id} value={c.id}>{c.company}</option>
-                ))}
-              </select>
-            )}
-            <button
-              onClick={() => deployStandardSprint(sprintClientId)}
-              className="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0"
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span>Deploy 8-Mission Sprint</span>
-            </button>
+          <div>
+            <h4 className="font-heading font-bold text-xs text-slate-100">1-Click Website Sprint Deployer</h4>
+            <p className="text-xs text-slate-400 mt-0.5">Instantly populate an 8-mission full-lifecycle website sprint with real deadlines & XP.</p>
           </div>
         </div>
-      ) : (
-        <div className="p-4 rounded-2xl bg-[#121826] border border-[#20293D] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#0A0D14] border border-[#232D42] flex items-center justify-center text-slate-400 shrink-0">
-              <Lock className="w-4 h-4 text-[#C9A038]" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="font-heading font-bold text-xs text-slate-300">1-Click Website Sprint Deployer</h4>
-                <span className="text-[10px] px-2 py-0.2 rounded-full bg-[#151C2C] text-slate-400 border border-[#232D42] font-semibold flex items-center gap-1">
-                  <Gem className="w-3 h-3 text-[#ECC968]" /> 15 Gems to Unlock
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">Automates generating 8 essential development missions (Wireframing, UI, Mobile code, SEO, Deployment) in 1 second.</p>
-            </div>
-          </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {clients.length > 0 && (
+            <select
+              value={sprintClientId}
+              onChange={e => setSprintClientId(e.target.value)}
+              className="bg-[#0A0D14] border border-[#232D42] text-slate-200 rounded-lg px-2.5 py-1.5 text-xs outline-none"
+            >
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>{c.company}</option>
+              ))}
+            </select>
+          )}
           <button
-            onClick={() => unlockPerk('sprint_deployer')}
+            onClick={() => deployStandardSprint(sprintClientId)}
             className="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0"
           >
-            <Unlock className="w-3.5 h-3.5" />
-            <span>Unlock (15</span>
-            <Gem className="w-3.5 h-3.5 fill-[#ECC968]/40" />
-            <span>)</span>
+            <Zap className="w-3.5 h-3.5" />
+            <span>Deploy 8-Mission Sprint</span>
           </button>
         </div>
-      )}
+      </div>
 
       {/* Daily Missions Hero Banner */}
       <div className="p-5 rounded-2xl bg-[#121826] border border-[#20293D] space-y-3">

@@ -4,7 +4,6 @@ import {
   Plus,
   ArrowRight,
   TrendingUp,
-  Gem,
   Sparkles
 } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';

@@ -6,10 +6,6 @@ import {
   ExternalLink,
   Plus,
   ShieldAlert,
-  Zap,
-  Lock,
-  Unlock,
-  Gem,
   Receipt,
   Send
 } from 'lucide-react';
@@ -23,13 +19,9 @@ export const HostingView: React.FC = () => {
     clients,
     openClientHQ,
     setActiveModal,
-    isPerkUnlocked,
-    unlockPerk,
     addInvoice,
     addToast
   } = useDashboard();
-
-  const isGuardianUnlocked = isPerkUnlocked('domain_guardian');
 
   const handleDraftRenewalInvoice = (domainItem: typeof hostingDomains[0]) => {
     sound.playGold();
@@ -112,52 +104,21 @@ export const HostingView: React.FC = () => {
         </button>
       </div>
 
-      {/* Perk Banner: Domain Guardian */}
-      {isGuardianUnlocked ? (
-        <div className="p-4 rounded-2xl bg-[#141B2B] border border-[#C9A038]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#C9A038]/20 border border-[#C9A038]/50 flex items-center justify-center text-[#ECC968] shrink-0">
-              <ShieldAlert className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="font-heading font-bold text-xs text-slate-100">Domain Guardian & Auto-Renew Dispatcher</h4>
-                <span className="text-[10px] px-2 py-0.2 rounded-full bg-[#C9A038]/15 text-[#ECC968] font-bold border border-[#C9A038]/30">UNLOCKED</span>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">Automated expiration monitor with 1-click renewal invoice drafting ($180/yr) & WhatsApp renewal alerts.</p>
-            </div>
+      {/* Domain Guardian */}
+      <div className="p-4 rounded-2xl bg-[#141B2B] border border-[#C9A038]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#C9A038]/20 border border-[#C9A038]/50 flex items-center justify-center text-[#ECC968] shrink-0">
+            <ShieldAlert className="w-5 h-5" />
           </div>
-          <span className="text-[11px] font-semibold text-[#ECC968] bg-[#0A0D14] px-3 py-1.5 rounded-xl border border-[#232D42] shrink-0">
-            Active on all Domains
-          </span>
-        </div>
-      ) : (
-        <div className="p-4 rounded-2xl bg-[#121826] border border-[#20293D] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#0A0D14] border border-[#232D42] flex items-center justify-center text-slate-400 shrink-0">
-              <Lock className="w-4 h-4 text-[#C9A038]" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="font-heading font-bold text-xs text-slate-300">Domain Guardian & Auto-Renew Dispatcher</h4>
-                <span className="text-[10px] px-2 py-0.2 rounded-full bg-[#151C2C] text-slate-400 border border-[#232D42] font-semibold flex items-center gap-1">
-                  <Gem className="w-3 h-3 text-[#ECC968]" /> 15 Gems to Unlock
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">Automates tracking registrar expirations and enables 1-click recurring renewal invoice generation for clients.</p>
-            </div>
+          <div>
+            <h4 className="font-heading font-bold text-xs text-slate-100">Domain Guardian & Auto-Renew Dispatcher</h4>
+            <p className="text-xs text-slate-400 mt-0.5">Automated expiration monitor with 1-click renewal invoice drafting ($180/yr) & WhatsApp renewal alerts.</p>
           </div>
-          <button
-            onClick={() => unlockPerk('domain_guardian')}
-            className="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0"
-          >
-            <Unlock className="w-3.5 h-3.5" />
-            <span>Unlock (15</span>
-            <Gem className="w-3.5 h-3.5 fill-[#ECC968]/40" />
-            <span>)</span>
-          </button>
         </div>
-      )}
+        <span className="text-[11px] font-semibold text-[#ECC968] bg-[#0A0D14] px-3 py-1.5 rounded-xl border border-[#232D42] shrink-0">
+          Active on all Domains
+        </span>
+      </div>
 
       {/* Domain Cards */}
       {hostingDomains.length === 0 ? (
@@ -243,27 +204,25 @@ export const HostingView: React.FC = () => {
               </div>
 
               {/* Domain Guardian 1-Click Operations */}
-              {isGuardianUnlocked && (
-                <div className="pt-2 border-t border-[#1E2638] flex items-center justify-between gap-2">
-                  <button
-                    onClick={() => handleDraftRenewalInvoice(item)}
-                    className="px-2.5 py-1.5 rounded-lg bg-[#0A0D14] hover:bg-[#182033] border border-[#232D42] hover:border-[#C9A038]/50 text-slate-300 hover:text-[#ECC968] text-[11px] font-semibold flex items-center gap-1.5 transition-all"
-                    title="Draft $180 annual renewal invoice"
-                  >
-                    <Receipt className="w-3 h-3 text-[#C9A038]" />
-                    <span>Draft Renewal ($180)</span>
-                  </button>
+              <div className="pt-2 border-t border-[#1E2638] flex items-center justify-between gap-2">
+                <button
+                  onClick={() => handleDraftRenewalInvoice(item)}
+                  className="px-2.5 py-1.5 rounded-lg bg-[#0A0D14] hover:bg-[#182033] border border-[#232D42] hover:border-[#C9A038]/50 text-slate-300 hover:text-[#ECC968] text-[11px] font-semibold flex items-center gap-1.5 transition-all"
+                  title="Draft $180 annual renewal invoice"
+                >
+                  <Receipt className="w-3 h-3 text-[#C9A038]" />
+                  <span>Draft Renewal ($180)</span>
+                </button>
 
-                  <button
-                    onClick={() => handleSendRenewalReminder(item)}
-                    className="px-2.5 py-1.5 rounded-lg bg-[#0A0D14] hover:bg-[#182033] border border-[#232D42] hover:border-[#C9A038]/50 text-slate-300 hover:text-[#ECC968] text-[11px] font-semibold flex items-center gap-1.5 transition-all"
-                    title="Send WhatsApp renewal alert"
-                  >
-                    <Send className="w-3 h-3 text-[#C9A038]" />
-                    <span>Alert Client</span>
-                  </button>
-                </div>
-              )}
+                <button
+                  onClick={() => handleSendRenewalReminder(item)}
+                  className="px-2.5 py-1.5 rounded-lg bg-[#0A0D14] hover:bg-[#182033] border border-[#232D42] hover:border-[#C9A038]/50 text-slate-300 hover:text-[#ECC968] text-[11px] font-semibold flex items-center gap-1.5 transition-all"
+                  title="Send WhatsApp renewal alert"
+                >
+                  <Send className="w-3 h-3 text-[#C9A038]" />
+                  <span>Alert Client</span>
+                </button>
+              </div>
 
               <div className="pt-2 border-t border-[#1E2638] flex items-center justify-between text-xs">
                 <a

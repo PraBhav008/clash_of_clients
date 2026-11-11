@@ -7,12 +7,7 @@ import {
   Download,
   Eye,
   X,
-  Zap,
-  Lock,
-  Unlock,
-  Gem,
-  ShieldCheck,
-  CheckCircle2
+  ShieldCheck
 } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { Invoice, InvoiceStatus } from '../types';
@@ -26,12 +21,9 @@ export const InvoicesView: React.FC = () => {
     setActiveModal,
     openClientHQ,
     formatCurrency,
-    addToast,
-    isPerkUnlocked,
-    unlockPerk
+    addToast
   } = useDashboard();
 
-  const isStampUnlocked = isPerkUnlocked('pdf_invoice_stamp');
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [search, setSearch] = useState<string>('');
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
@@ -105,52 +97,21 @@ export const InvoicesView: React.FC = () => {
         </button>
       </div>
 
-      {/* Perk Banner: Royal Paid Seal & Tax Invoice */}
-      {isStampUnlocked ? (
-        <div className="p-4 rounded-2xl bg-[#141B2B] border border-[#C9A038]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#C9A038]/20 border border-[#C9A038]/50 flex items-center justify-center text-[#ECC968] shrink-0">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="font-heading font-bold text-xs text-slate-100">Royal Paid Seal & Tax Invoice Stamper</h4>
-                <span className="text-[10px] px-2 py-0.2 rounded-full bg-[#C9A038]/15 text-[#ECC968] font-bold border border-[#C9A038]/30">UNLOCKED</span>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">Automatic gold-embossed Verified Paid wax stamp and 18% GST / VAT tax calculation breakdowns on all invoices.</p>
-            </div>
+      {/* Royal Paid Seal & Tax Invoice Stamper */}
+      <div className="p-4 rounded-2xl bg-[#141B2B] border border-[#C9A038]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#C9A038]/20 border border-[#C9A038]/50 flex items-center justify-center text-[#ECC968] shrink-0">
+            <ShieldCheck className="w-5 h-5" />
           </div>
-          <span className="text-[11px] font-semibold text-[#ECC968] bg-[#0A0D14] px-3 py-1.5 rounded-xl border border-[#232D42] shrink-0">
-            Active on all PDF exports
-          </span>
-        </div>
-      ) : (
-        <div className="p-4 rounded-2xl bg-[#121826] border border-[#20293D] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#0A0D14] border border-[#232D42] flex items-center justify-center text-slate-400 shrink-0">
-              <Lock className="w-4 h-4 text-[#C9A038]" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="font-heading font-bold text-xs text-slate-300">Royal Paid Seal & Tax Invoice Stamper</h4>
-                <span className="text-[10px] px-2 py-0.2 rounded-full bg-[#151C2C] text-slate-400 border border-[#232D42] font-semibold flex items-center gap-1">
-                  <Gem className="w-3 h-3 text-[#ECC968]" /> 20 Gems to Unlock
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">Upgrades invoices with official gold verification stamps and automated tax/GST breakdown calculations for clients.</p>
-            </div>
+          <div>
+            <h4 className="font-heading font-bold text-xs text-slate-100">Royal Paid Seal & Tax Invoice Stamper</h4>
+            <p className="text-xs text-slate-400 mt-0.5">Automatic gold-embossed Verified Paid wax stamp and 18% GST / VAT tax calculation breakdowns on all invoices.</p>
           </div>
-          <button
-            onClick={() => unlockPerk('pdf_invoice_stamp')}
-            className="btn-gold px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0"
-          >
-            <Unlock className="w-3.5 h-3.5" />
-            <span>Unlock (20</span>
-            <Gem className="w-3.5 h-3.5 fill-[#ECC968]/40" />
-            <span>)</span>
-          </button>
         </div>
-      )}
+        <span className="text-[11px] font-semibold text-[#ECC968] bg-[#0A0D14] px-3 py-1.5 rounded-xl border border-[#232D42] shrink-0">
+          Active on all PDF exports
+        </span>
+      </div>
 
       {/* Filter and Search Bar */}
       <div className="p-4 rounded-2xl bg-[#121826] border border-[#20293D] flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -356,67 +317,50 @@ export const InvoicesView: React.FC = () => {
               </div>
 
               {/* Tax Breakdown & Stamp Section */}
-              {isStampUnlocked ? (
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#141B2B] border border-[#20293D] text-[11px]">
-                    <label className="flex items-center gap-2 cursor-pointer text-slate-300">
-                      <input
-                        type="checkbox"
-                        checked={includeTax}
-                        onChange={e => setIncludeTax(e.target.checked)}
-                        className="rounded border-[#232D42] text-[#C9A038] focus:ring-0"
-                      />
-                      <span>Itemized Tax Breakdown (18% GST / VAT Calculation)</span>
-                    </label>
-                    <span className="text-[#ECC968] font-bold text-[10px] px-2 py-0.5 rounded bg-[#C9A038]/10 border border-[#C9A038]/30">STAMP ACTIVE</span>
-                  </div>
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#141B2B] border border-[#20293D] text-[11px]">
+                  <label className="flex items-center gap-2 cursor-pointer text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={includeTax}
+                      onChange={e => setIncludeTax(e.target.checked)}
+                      className="rounded border-[#232D42] text-[#C9A038] focus:ring-0"
+                    />
+                    <span>Itemized Tax Breakdown (18% GST / VAT Calculation)</span>
+                  </label>
+                  <span className="text-[#ECC968] font-bold text-[10px] px-2 py-0.5 rounded bg-[#C9A038]/10 border border-[#C9A038]/30">STAMP ACTIVE</span>
+                </div>
 
-                  {includeTax && (
-                    <div className="p-3 rounded-xl bg-[#0A0D14] border border-[#232D42] space-y-1.5 text-xs">
-                      <div className="flex justify-between text-slate-400">
-                        <span>Net Engineering Subtotal:</span>
-                        <span className="font-mono text-slate-300">{formatCurrency(Math.round(viewInvoice.totalAmount / 1.18))}</span>
+                {includeTax && (
+                  <div className="p-3 rounded-xl bg-[#0A0D14] border border-[#232D42] space-y-1.5 text-xs">
+                    <div className="flex justify-between text-slate-400">
+                      <span>Net Engineering Subtotal:</span>
+                      <span className="font-mono text-slate-300">{formatCurrency(Math.round(viewInvoice.totalAmount / 1.18))}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-400">
+                      <span>Applicable GST / VAT (18%):</span>
+                      <span className="font-mono text-slate-300">{formatCurrency(Math.round(viewInvoice.totalAmount - (viewInvoice.totalAmount / 1.18)))}</span>
+                    </div>
+                  </div>
+                )}
+
+                {viewInvoice.status === 'Paid' && (
+                  <div className="p-3 rounded-xl bg-[#C9A038]/10 border border-[#C9A038]/40 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-[#C9A038]/20 border border-[#C9A038] flex items-center justify-center text-[#ECC968] font-bold text-sm">
+                        ✓
                       </div>
-                      <div className="flex justify-between text-slate-400">
-                        <span>Applicable GST / VAT (18%):</span>
-                        <span className="font-mono text-slate-300">{formatCurrency(Math.round(viewInvoice.totalAmount - (viewInvoice.totalAmount / 1.18)))}</span>
+                      <div>
+                        <div className="text-[11px] font-bold font-heading text-[#ECC968] tracking-wider uppercase">CITADEL VERIFIED & SETTLED</div>
+                        <div className="text-[10px] text-slate-400">Official Commercial Tax Receipt · Authenticated Seal</div>
                       </div>
                     </div>
-                  )}
-
-                  {viewInvoice.status === 'Paid' && (
-                    <div className="p-3 rounded-xl bg-[#C9A038]/10 border border-[#C9A038]/40 flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-[#C9A038]/20 border border-[#C9A038] flex items-center justify-center text-[#ECC968] font-bold text-sm">
-                          ✓
-                        </div>
-                        <div>
-                          <div className="text-[11px] font-bold font-heading text-[#ECC968] tracking-wider uppercase">CITADEL VERIFIED & SETTLED</div>
-                          <div className="text-[10px] text-slate-400">Official Commercial Tax Receipt · Authenticated Seal</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[10px] font-mono text-slate-400">TXN #WCK-8824</span>
-                      </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-mono text-slate-400">TXN #WCK-8824</span>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div className="p-2.5 rounded-xl bg-[#121826] border border-[#20293D] flex items-center justify-between text-[11px] text-slate-400">
-                  <div className="flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5 text-[#C9A038]" />
-                    <span>Royal Paid Seal & Tax Invoice Stamper is Locked</span>
                   </div>
-                  <button
-                    onClick={() => unlockPerk('pdf_invoice_stamp')}
-                    className="text-[#ECC968] hover:underline font-bold text-[10px] flex items-center gap-1"
-                  >
-                    <span>Unlock (20</span>
-                    <Gem className="w-2.5 h-2.5 fill-[#ECC968]/40" />
-                    <span>)</span>
-                  </button>
-                </div>
-              )}
+                )}
+              </div>
 
               <div className="flex justify-between items-center text-sm font-bold text-slate-100 border-t border-[#1E2638] pt-3">
                 <span>Total Due:</span>

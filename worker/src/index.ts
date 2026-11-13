@@ -320,8 +320,9 @@ export default {
       }
     }
 
-    // Authenticate all remaining protected API routes
-    const authorized = await isAuthorized(request, env);
+    // Authenticate all routes, but allow public inquiry submissions from website card
+    const isPublicIntake = path === '/api/clients' && method === 'POST';
+    const authorized = isPublicIntake || (await isAuthorized(request, env));
     if (!authorized) {
       return jsonResponse({
         success: false,

@@ -148,7 +148,7 @@ interface DashboardContextType {
   removeToast: (id: string) => void;
 
   // Currency helper
-  formatCurrency: (amount: number) => string;
+  formatCurrency: (amount?: number | null) => string;
 
   // Sprint Operations
   deployStandardSprint: (clientId: string) => void;
@@ -170,16 +170,98 @@ interface DashboardContextType {
   restoreFromCloudflare: (silent?: boolean) => Promise<boolean>;
 }
 
+export const normalizeClient = (c: any): Client => {
+  if (!c || typeof c !== 'object') {
+    return {
+      id: 'c_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      name: 'Unknown Client',
+      company: 'General',
+      avatar: '',
+      email: '',
+      phone: '',
+      website: '',
+      status: 'Prospect',
+      projectValue: 0,
+      amountPaid: 0,
+      amountPending: 0,
+      nextDeadline: '',
+      lastCommunication: new Date().toISOString().split('T')[0],
+      healthScore: 100,
+      healthStatus: 'Good',
+      priority: 'Medium',
+      tags: [],
+      notes: '',
+      billingAddress: '',
+      joinedDate: new Date().toISOString().split('T')[0],
+    };
+  }
+
+  const name = String(c.name || c.fullName || c.clientName || c.company || 'New Inquiry').trim();
+  const company = String(c.company || c.companyName || c.name || 'Client Base').trim();
+  const projectVal = Number(c.projectValue) || 0;
+  const paid = Number(c.amountPaid) || 0;
+  const pending = c.amountPending !== undefined && !isNaN(Number(c.amountPending))
+    ? Number(c.amountPending)
+    : Math.max(0, projectVal - paid);
+
+  const rawHealth = Number(c.healthScore);
+  const healthScore = !isNaN(rawHealth) ? Math.max(0, Math.min(100, rawHealth)) : 100;
+
+  let healthStatus: 'Excellent' | 'Good' | 'Needs Attention' | 'At Risk' = c.healthStatus;
+  if (!['Excellent', 'Good', 'Needs Attention', 'At Risk'].includes(healthStatus)) {
+    if (healthScore >= 90) healthStatus = 'Excellent';
+    else if (healthScore >= 70) healthStatus = 'Good';
+    else if (healthScore >= 50) healthStatus = 'Needs Attention';
+    else healthStatus = 'At Risk';
+  }
+
+  const validStatuses = ['Active', 'Waiting', 'Prospect', 'Payment Pending', 'At Risk', 'Completed'];
+  const status = validStatuses.includes(c.status) ? c.status : 'Prospect';
+
+  const validPriorities = ['Critical', 'High', 'Medium', 'Low'];
+  const priority = validPriorities.includes(c.priority) ? c.priority : 'Medium';
+
+  return {
+    id: String(c.id || `c_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`),
+    name,
+    company,
+    avatar: c.avatar || '',
+    email: c.email || '',
+    phone: c.phone || '',
+    website: c.website || '',
+    status,
+    currentProjectId: c.currentProjectId || undefined,
+    projectValue: projectVal,
+    amountPaid: paid,
+    amountPending: pending,
+    nextDeadline: c.nextDeadline || '',
+    lastCommunication: c.lastCommunication || new Date().toISOString().split('T')[0],
+    healthScore,
+    healthStatus,
+    priority,
+    tags: Array.isArray(c.tags) ? c.tags : (c.tags ? [String(c.tags)] : []),
+    notes: c.notes || c.message || c.inquiry || '',
+    billingAddress: c.billingAddress || '',
+    joinedDate: c.joinedDate || new Date().toISOString().split('T')[0],
+  };
+};
+
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
 export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeView, setActiveView] = useState<ActiveView>('command-center');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
-  // Use clean versioned keys (v2) to purge old demo data from localStorage
+  // Use clean versioned keys (v2) to purge old demo data from localStorage, normalized to prevent undefined runtime errors
   const [clients, setClients] = useState<Client[]>(() => {
     const saved = localStorage.getItem('coc_v2_clients');
-    return saved ? JSON.parse(saved) : initialClients;
+    if (!saved) return initialClients;
+    try {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed.map(normalizeClient) : initialClients;
+    } catch {
+      return initialClients;
+    }
   });
 
   const [projects, setProjects] = useState<Project[]>(() => {
@@ -241,7 +323,16 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Trash Can State & Persistence
   const [trashedClients, setTrashedClients] = useState<TrashedClientBundle[]>(() => {
     const saved = localStorage.getItem('coc_v2_trash');
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+    try {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed.map((b: any) => ({
+        ...b,
+        client: normalizeClient(b.client)
+      })) : [];
+    } catch {
+      return [];
+    }
   });
   const [isTrashOpen, setIsTrashOpen] = useState<boolean>(false);
 
@@ -400,8 +491,9 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  const formatCurrency = (amount: number): string => {
-    return '₹' + amount.toLocaleString('en-IN');
+  const formatCurrency = (amount?: number | null): string => {
+    const val = Number(amount);
+    return '₹' + (isNaN(val) ? 0 : val).toLocaleString('en-IN');
   };
 
   const openClientHQ = (clientId: string) => {
@@ -940,8 +1032,13 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const res = await pullSnapshotFromCloudflare(activeConfig);
       if (res.success && res.payload) {
         const p = res.payload;
-        if (Array.isArray(p.clients)) setClients(p.clients);
-        if (Array.isArray(p.trashedClients)) setTrashedClients(p.trashedClients);
+        if (Array.isArray(p.clients)) setClients(p.clients.map(normalizeClient));
+        if (Array.isArray(p.trashedClients)) {
+          setTrashedClients(p.trashedClients.map((b: any) => ({
+            ...b,
+            client: normalizeClient(b.client)
+          })));
+        }
         if (Array.isArray(p.projects)) setProjects(p.projects);
         if (Array.isArray(p.tasks)) setTasks(p.tasks);
         if (Array.isArray(p.invoices)) setInvoices(p.invoices);

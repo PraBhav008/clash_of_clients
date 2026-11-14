@@ -51,10 +51,10 @@ export const ClientsView: React.FC = () => {
         (c.tags || []).some(t => t.toLowerCase().includes(q));
       return matchStatus && matchPriority && matchSearch;
     }).sort((a, b) => {
-      if (sortBy === 'value') return b.projectValue - a.projectValue;
-      if (sortBy === 'health') return b.healthScore - a.healthScore;
-      if (sortBy === 'pending') return b.amountPending - a.amountPending;
-      return a.company.localeCompare(b.company);
+      if (sortBy === 'value') return (Number(b.projectValue) || 0) - (Number(a.projectValue) || 0);
+      if (sortBy === 'health') return (Number(b.healthScore) || 0) - (Number(a.healthScore) || 0);
+      if (sortBy === 'pending') return (Number(b.amountPending) || 0) - (Number(a.amountPending) || 0);
+      return (a.company || a.name || '').localeCompare(b.company || b.name || '');
     });
   }, [clients, statusFilter, priorityFilter, searchQuery, sortBy]);
 
@@ -289,13 +289,13 @@ export const ClientsView: React.FC = () => {
                       Client Health
                     </span>
                     <span className="font-semibold text-slate-200">
-                      {client.healthScore}% · {client.healthStatus}
+                      {client.healthScore ?? 100}% · {client.healthStatus || 'Good'}
                     </span>
                   </div>
                   <div className="w-full h-1.5 bg-[#0A0D14] rounded-full overflow-hidden border border-[#232D42]">
                     <div
                       className="h-full bg-[#C9A038] rounded-full"
-                      style={{ width: `${client.healthScore}%` }}
+                      style={{ width: `${client.healthScore ?? 100}%` }}
                     />
                   </div>
                 </div>
@@ -314,7 +314,7 @@ export const ClientsView: React.FC = () => {
 
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1 mb-2">
-                  {client.tags.map(t => (
+                  {(client.tags || []).map(t => (
                     <span key={t} className="text-[10px] px-2 py-0.5 rounded bg-[#151C2C] text-slate-400 border border-[#232D42]">
                       {t}
                     </span>

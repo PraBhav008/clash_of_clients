@@ -231,7 +231,7 @@ export const GlobalSearchModal: React.FC = () => {
                               {inv.invoiceNumber} — {inv.clientCompany}
                             </div>
                             <div className="text-[11px] text-slate-400">
-                              Total: ₹{inv.totalAmount.toLocaleString('en-IN')} · Due {inv.dueDate}
+                              Total: ₹{(Number(inv.totalAmount) || 0).toLocaleString('en-IN')} · Due {inv.dueDate || '—'}
                             </div>
                           </div>
                           <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${

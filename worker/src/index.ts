@@ -486,7 +486,41 @@ async function getSyncColumns(env: Env): Promise<Set<string>> {
           return jsonResponse({ success: true, clients: snapshot?.clients || [] }, 200, env);
         }
         if (method === 'POST') {
-          const newClient = await request.json() as any;
+          const raw = await request.json() as any;
+          const projectVal = Number(raw.projectValue) || 0;
+          const paid = Number(raw.amountPaid) || 0;
+          const pending = raw.amountPending !== undefined && !isNaN(Number(raw.amountPending))
+            ? Number(raw.amountPending)
+            : Math.max(0, projectVal - paid);
+          const rawHealth = Number(raw.healthScore);
+          const healthScore = !isNaN(rawHealth) ? Math.max(0, Math.min(100, rawHealth)) : 100;
+          const name = String(raw.name || raw.fullName || raw.clientName || raw.company || 'New Inquiry').trim();
+          const company = String(raw.company || raw.companyName || raw.name || 'Client Base').trim();
+
+          const newClient = {
+            id: String(raw.id || `c_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`),
+            name,
+            company,
+            avatar: raw.avatar || '',
+            email: raw.email || '',
+            phone: raw.phone || '',
+            website: raw.website || '',
+            status: raw.status || 'Prospect',
+            currentProjectId: raw.currentProjectId || undefined,
+            projectValue: projectVal,
+            amountPaid: paid,
+            amountPending: pending,
+            nextDeadline: raw.nextDeadline || '',
+            lastCommunication: raw.lastCommunication || new Date().toISOString().split('T')[0],
+            healthScore,
+            healthStatus: raw.healthStatus || 'Good',
+            priority: raw.priority || 'Medium',
+            tags: Array.isArray(raw.tags) ? raw.tags : (raw.tags ? [String(raw.tags)] : ['Inquiry']),
+            notes: raw.notes || raw.message || raw.inquiry || '',
+            billingAddress: raw.billingAddress || '',
+            joinedDate: raw.joinedDate || new Date().toISOString().split('T')[0]
+          };
+
           const snapshot = (await getSnapshotData()) || { clients: [] };
           snapshot.clients = [newClient, ...(snapshot.clients || [])];
           await saveSnapshotData(snapshot);

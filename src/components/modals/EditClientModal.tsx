@@ -137,15 +137,15 @@ const EditClientModalBody: React.FC<{ client: Client; onClose: () => void }> = (
   const handleAddTag = (tagToAdd?: string) => {
     const val = (tagToAdd ?? newTag).trim();
     if (!val) return;
-    if (!clientDraft.tags.includes(val)) {
-      patchClient({ tags: [...clientDraft.tags, val] });
+    if (!(clientDraft.tags || []).includes(val)) {
+      patchClient({ tags: [...(clientDraft.tags || []), val] });
     }
     if (tagToAdd === undefined) setNewTag('');
   };
 
   const handleRemoveTag = (tag: string) => {
     sound.playClick();
-    patchClient({ tags: clientDraft.tags.filter(t => t !== tag) });
+    patchClient({ tags: (clientDraft.tags || []).filter(t => t !== tag) });
   };
 
   const handleFinancialChange = (field: 'projectValue' | 'amountPaid', val: number) => {

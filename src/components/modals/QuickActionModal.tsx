@@ -769,7 +769,7 @@ export const QuickActionModal: React.FC = () => {
                   className="w-full px-3 py-2 rounded-xl bg-[#0A0D14] border border-[#232D42] text-slate-200 outline-none"
                 >
                   {clients.map(c => (
-                    <option key={c.id} value={c.id}>{c.company} (Pending: ₹{c.amountPending.toLocaleString('en-IN')})</option>
+                    <option key={c.id} value={c.id}>{c.company || c.name} (Pending: ₹{(Number(c.amountPending) || 0).toLocaleString('en-IN')})</option>
                   ))}
                 </select>
               </div>

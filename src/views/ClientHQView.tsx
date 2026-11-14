@@ -233,7 +233,9 @@ export const ClientHQView: React.FC = () => {
     }
   };
 
-  const paidPercentage = Math.min(100, Math.round((client.amountPaid / client.projectValue) * 100));
+  const paidPercentage = client.projectValue
+    ? Math.min(100, Math.round(((client.amountPaid || 0) / client.projectValue) * 100))
+    : 0;
 
   return (
     <div className="space-y-6 pb-12">
@@ -383,14 +385,14 @@ export const ClientHQView: React.FC = () => {
                 Relationship Health
               </span>
               <span className="font-semibold text-slate-200">
-                {client.healthScore}% · {client.healthStatus}
+                {client.healthScore ?? 100}% · {client.healthStatus || 'Good'}
               </span>
             </div>
 
             <div className="w-full h-1.5 bg-[#0A0D14] rounded-full overflow-hidden border border-[#232D42]">
               <div
                 className="h-full bg-[#C9A038] rounded-full"
-                style={{ width: `${client.healthScore}%` }}
+                style={{ width: `${client.healthScore ?? 100}%` }}
               />
             </div>
 

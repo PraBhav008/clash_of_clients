@@ -11,7 +11,8 @@ import {
   SlidersHorizontal,
   UserPlus,
   Trash2,
-  Pencil
+  Pencil,
+  Globe
 } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { Client, ClientStatus } from '../types';
@@ -39,10 +40,21 @@ export const ClientsView: React.FC = () => {
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
 
+  const inquiryCount = useMemo(() => {
+    return clients.filter(c =>
+      c.source === 'website_inquiry' || (c.tags || []).some(t => t.toLowerCase().includes('inquiry'))
+    ).length;
+  }, [clients]);
+
   const filteredClients = useMemo(() => {
     const q = searchQuery.toLowerCase();
     return clients.filter(c => {
-      const matchStatus = statusFilter === 'All' || c.status === statusFilter;
+      const isWebsiteInquiry = c.source === 'website_inquiry' || (c.tags || []).some(t => t.toLowerCase().includes('inquiry'));
+      const matchStatus = statusFilter === 'All'
+        ? true
+        : statusFilter === 'Inquiries'
+          ? isWebsiteInquiry
+          : c.status === statusFilter;
       const matchPriority = priorityFilter === 'All' || c.priority === priorityFilter;
       const matchSearch = 
         (c.name || '').toLowerCase().includes(q) ||
@@ -58,15 +70,16 @@ export const ClientsView: React.FC = () => {
     });
   }, [clients, statusFilter, priorityFilter, searchQuery, sortBy]);
 
-  const statuses = [
+  const statuses = useMemo(() => [
     { label: 'All', value: 'All' },
+    { label: `🌐 Website Inquiries${inquiryCount > 0 ? ` (${inquiryCount})` : ''}`, value: 'Inquiries' },
     { label: 'Active', value: 'Active' },
     { label: 'Waiting', value: 'Waiting' },
     { label: 'Prospect', value: 'Prospect' },
     { label: 'Payment Pending', value: 'Payment Pending' },
     { label: 'At Risk', value: 'At Risk' },
     { label: 'Completed', value: 'Completed' },
-  ];
+  ], [inquiryCount]);
 
   const getStatusBadge = (status: ClientStatus) => {
     switch (status) {
@@ -252,6 +265,22 @@ export const ClientsView: React.FC = () => {
                   </div>
 
                   <div className="shrink-0 flex items-center gap-1.5">
+                    {client.source === 'website_inquiry' || (client.tags || []).some(t => t.toLowerCase().includes('inquiry')) ? (
+                      <span
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 font-semibold flex items-center gap-1 shadow-xs"
+                        title="Inquiry submitted via external website form"
+                      >
+                        <Globe className="w-2.5 h-2.5 text-cyan-400 shrink-0" />
+                        Web Inquiry
+                      </span>
+                    ) : (
+                      <span
+                        className="text-[9px] px-1.5 py-0.5 rounded bg-[#151C2C] text-slate-400 border border-[#232D42] font-medium"
+                        title="Client registered manually by you"
+                      >
+                        Manual
+                      </span>
+                    )}
                     {getStatusBadge(client.status)}
                     <button
                       type="button"
@@ -314,11 +343,22 @@ export const ClientsView: React.FC = () => {
 
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1 mb-2">
-                  {(client.tags || []).map(t => (
-                    <span key={t} className="text-[10px] px-2 py-0.5 rounded bg-[#151C2C] text-slate-400 border border-[#232D42]">
-                      {t}
-                    </span>
-                  ))}
+                  {(client.tags || []).map(t => {
+                    const isWebsiteInquiry = t.toLowerCase().includes('inquiry');
+                    return (
+                      <span
+                        key={t}
+                        className={`text-[10px] px-2 py-0.5 rounded flex items-center gap-1 font-medium transition-colors ${
+                          isWebsiteInquiry
+                            ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/40 shadow-xs'
+                            : 'bg-[#151C2C] text-slate-400 border border-[#232D42]'
+                        }`}
+                      >
+                        {isWebsiteInquiry && <Globe className="w-2.5 h-2.5 text-cyan-400 shrink-0" />}
+                        {t}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
 

@@ -35,6 +35,7 @@ export interface Client {
   notes: string;
   billingAddress: string;
   joinedDate: string;
+  source?: 'manual' | 'website_inquiry' | string;
 }
 
 export interface Project {

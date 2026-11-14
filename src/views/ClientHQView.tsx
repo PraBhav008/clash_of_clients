@@ -329,6 +329,16 @@ export const ClientHQView: React.FC = () => {
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#C9A038]/10 text-[#ECC968] border border-[#C9A038]/30 font-semibold">
                   {client.status}
                 </span>
+                {client.source === 'website_inquiry' || (client.tags || []).some(t => t.toLowerCase().includes('inquiry')) ? (
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 font-semibold flex items-center gap-1 shadow-xs">
+                    <Globe className="w-3 h-3 text-cyan-400" />
+                    Website Inquiry
+                  </span>
+                ) : (
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#151C2C] text-slate-400 border border-[#232D42] font-medium">
+                    Manual Recruit
+                  </span>
+                )}
               </div>
 
               <p className="text-xs text-slate-400 mt-1">
@@ -355,6 +365,28 @@ export const ClientHQView: React.FC = () => {
                   </a>
                 )}
               </div>
+
+              {/* Client Tags */}
+              {(client.tags || []).length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                  {client.tags.map(t => {
+                    const isWebsiteInquiry = t.toLowerCase().includes('inquiry');
+                    return (
+                      <span
+                        key={t}
+                        className={`text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 font-medium ${
+                          isWebsiteInquiry
+                            ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/40 shadow-xs'
+                            : 'bg-[#0A0D14] text-slate-400 border border-[#232D42]'
+                        }`}
+                      >
+                        {isWebsiteInquiry && <Globe className="w-2.5 h-2.5 text-cyan-400 shrink-0" />}
+                        {t}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Speed Dial: Direct Client Actions */}
               <div className="flex flex-wrap items-center gap-2 pt-2.5">

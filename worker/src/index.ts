@@ -497,6 +497,12 @@ async function getSyncColumns(env: Env): Promise<Set<string>> {
           const name = String(raw.name || raw.fullName || raw.clientName || raw.company || 'New Inquiry').trim();
           const company = String(raw.company || raw.companyName || raw.name || 'Client Base').trim();
 
+          // Ensure 'Website Inquiry' tag is ALWAYS attached so user can distinguish external submissions
+          const incomingTags = Array.isArray(raw.tags)
+            ? raw.tags.map((t: any) => String(t).trim()).filter(Boolean)
+            : (raw.tags ? [String(raw.tags).trim()] : []);
+          const finalTags = Array.from(new Set(['Website Inquiry', ...incomingTags]));
+
           const newClient = {
             id: String(raw.id || `c_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`),
             name,
@@ -506,6 +512,7 @@ async function getSyncColumns(env: Env): Promise<Set<string>> {
             phone: raw.phone || '',
             website: raw.website || '',
             status: raw.status || 'Prospect',
+            source: 'website_inquiry',
             currentProjectId: raw.currentProjectId || undefined,
             projectValue: projectVal,
             amountPaid: paid,
@@ -515,7 +522,7 @@ async function getSyncColumns(env: Env): Promise<Set<string>> {
             healthScore,
             healthStatus: raw.healthStatus || 'Good',
             priority: raw.priority || 'Medium',
-            tags: Array.isArray(raw.tags) ? raw.tags : (raw.tags ? [String(raw.tags)] : ['Inquiry']),
+            tags: finalTags,
             notes: raw.notes || raw.message || raw.inquiry || '',
             billingAddress: raw.billingAddress || '',
             joinedDate: raw.joinedDate || new Date().toISOString().split('T')[0]

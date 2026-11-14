@@ -221,6 +221,20 @@ export const normalizeClient = (c: any): Client => {
   const validPriorities = ['Critical', 'High', 'Medium', 'Low'];
   const priority = validPriorities.includes(c.priority) ? c.priority : 'Medium';
 
+  const rawTags: string[] = Array.isArray(c.tags)
+    ? c.tags.map((t: any) => String(t).trim()).filter(Boolean)
+    : (c.tags ? [String(c.tags).trim()] : []);
+
+  const isExternalInquiry = c.source === 'website_inquiry' ||
+    rawTags.some(t => t.toLowerCase().includes('inquiry'));
+
+  const source = c.source || (isExternalInquiry ? 'website_inquiry' : 'manual');
+
+  // If this client is an external inquiry, ensure 'Website Inquiry' tag is explicitly present
+  const tags = isExternalInquiry && !rawTags.some(t => t.toLowerCase() === 'website inquiry')
+    ? ['Website Inquiry', ...rawTags]
+    : rawTags;
+
   return {
     id: String(c.id || `c_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`),
     name,
@@ -230,6 +244,7 @@ export const normalizeClient = (c: any): Client => {
     phone: c.phone || '',
     website: c.website || '',
     status,
+    source,
     currentProjectId: c.currentProjectId || undefined,
     projectValue: projectVal,
     amountPaid: paid,
@@ -239,7 +254,7 @@ export const normalizeClient = (c: any): Client => {
     healthScore,
     healthStatus,
     priority,
-    tags: Array.isArray(c.tags) ? c.tags : (c.tags ? [String(c.tags)] : []),
+    tags,
     notes: c.notes || c.message || c.inquiry || '',
     billingAddress: c.billingAddress || '',
     joinedDate: c.joinedDate || new Date().toISOString().split('T')[0],
